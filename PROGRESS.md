@@ -16,6 +16,7 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
 | **Mini-paso 6.1** | Unificación del formato de errores (SPEC §10) | **Completado** | Formato único `{"code", "message", "details"}` en toda la API; sin `detail` duplicado. |
 | **Paso 7** | Reportes (`GET /v1/costs`) | **Completado** | `ReportService`, endpoint de costos agregados por dimensión, filtros de fechas y validaciones 422/401 unificadas. |
 | **Paso 8** | CI en GitHub Actions | **Completado** | Workflow `.github/workflows/ci.yml` con Postgres 16, uv, ruff y cobertura ≥ 80%. |
+| **Mini-paso 8.1** | Actualización de versiones de GitHub Actions | **Completado** | `actions/checkout@v7` y `astral-sh/setup-uv@v10.3.0` (tag inmutable verificado en releases oficiales). |
 | **Paso 9** | SDK Python (`sdk/tokenledger`) | Pendiente | Envoltorio con `tl.track(...)` sin bloqueo. |
 | **Paso 10** | Dashboard en Streamlit | Pendiente | Métricas, filtros y gráficos de gasto. |
 | **Paso 11** | Seed de datos de demostración | Pendiente | Generación de ~300 eventos sintéticos. |
@@ -73,11 +74,19 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
 ### Paso 8 — CI en GitHub Actions
 - **Workflow:** `.github/workflows/ci.yml` configurado para ejecutarse en `push` y `pull_request` sobre `main` y `master`, con `permissions: contents: read` y `timeout-minutes: 10`.
 - **Servicios:** Contenedor de servicio PostgreSQL 16 con healthcheck (`pg_isready`), puertos mapeados (`5432:5432`) y credenciales de superusuario `postgres` para permitir crear y migrar la base `tokenledger_test` durante la suite de tests de integración.
-- **Instalación y Orden de Ejecución:** Instalación oficial de `uv` con acción `astral-sh/setup-uv@v5` (con caché habilitada y Python 3.12), ejecutando en orden: `uv sync --frozen`, `uv run ruff check .`, `uv run ruff format --check .` y `uv run pytest --cov=app --cov-fail-under=80`.
+- **Instalación y Orden de Ejecución:** Instalación oficial de `uv` con acción `astral-sh/setup-uv` (con caché habilitada y Python 3.12), ejecutando en orden: `uv sync --frozen`, `uv run ruff check .`, `uv run ruff format --check .` y `uv run pytest --cov=app --cov-fail-under=80`.
 - **README y Badge:** Creación de `README.md` con título, descripción y badge de CI apuntando a `https://github.com/EmanuelBaez7/tokenledger/actions/workflows/ci.yml/badge.svg`.
 - **Verificación:** Validación de sintaxis YAML con `yaml.safe_load`; ejecución local de cobertura obteniendo 96.96% (umbral ≥ 80% superado).
 
+### Mini-paso 8.1 — Actualización de versiones de GitHub Actions
+- **Verificación de versiones oficiales:** Verificadas en las páginas de releases oficiales de GitHub:
+  - `actions/checkout`: versión mayor estable `v7` (release oficial `v7.0.1`).
+  - `astral-sh/setup-uv`: versión completa `v10.3.0` (debido al uso de tags inmutables desde v8.0.0).
+- **Workflow:** Actualizado `.github/workflows/ci.yml` únicamente en las referencias `uses` para utilizar `actions/checkout@v7` y `astral-sh/setup-uv@v10.3.0`, preservando la configuración del servicio Postgres y comandos de build/test.
+- **Validación:** Sintaxis YAML validada con `yaml.safe_load`, suite de tests completa y linters pasando al 100%.
+
 ---
+
 
 ## Pendientes y avisos
 - [ ] Crear el repo remoto en GitHub, hacer push y comprobar que el workflow queda en verde.
