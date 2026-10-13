@@ -14,7 +14,7 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
 | **Paso 5** | Repositorios (`EventRepository`, `PriceRepository`) | Completado | Consultas SQL y agregaciones por dimensión. |
 | **Paso 6** | Ingesta de eventos (`POST /v1/events`) y autenticación | **Completado** | Auth con `X-API-Key`, esquemas Pydantic `extra="forbid"`, `EventService`, error 422 `unknown_model_price`, `cost_usd` serializado como string. |
 | **Mini-paso 6.1** | Unificación del formato de errores (SPEC §10) | **Completado** | Formato único `{"code", "message", "details"}` en toda la API; sin `detail` duplicado. |
-| **Paso 7** | Reportes (`GET /v1/costs`) | Pendiente | `ReportService` y endpoint agregado por dimensión. |
+| **Paso 7** | Reportes (`GET /v1/costs`) | **Completado** | `ReportService`, endpoint de costos agregados por dimensión, filtros de fechas y validaciones 422/401 unificadas. |
 | **Paso 8** | CI en GitHub Actions | Pendiente | Workflow con Postgres, ruff y cobertura ≥ 80%. |
 | **Paso 9** | SDK Python (`sdk/tokenledger`) | Pendiente | Envoltorio con `tl.track(...)` sin bloqueo. |
 | **Paso 10** | Dashboard en Streamlit | Pendiente | Métricas, filtros y gráficos de gasto. |
@@ -63,7 +63,15 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
 - **Manejadores centralizados:** Módulo `app/api/errors.py` con manejadores para `StarletteHTTPException` (401 `unauthorized`, 404 `not_found`, etc.), `UnknownModelPriceError` (422 `unknown_model_price` con `details={"model": ...}`) y `RequestValidationError` (422 `validation_error`, `message="Request validation failed"`, y `details` con lista sanitizada de `{field, message}` sin exponer inputs sensibles).
 - **Documentación:** Actualizado `SPEC.md` §10 y `docs/05-BACKEND-SCHEMA.md`.
 
+### Paso 7 — Reportes (`GET /v1/costs`)
+- **Servicio:** `ReportService` en `app/services/reports.py` que delega la agregación a `EventRepository.aggregate(group_by, date_from, date_to)` y valida que `from <= to` lanzando `InvalidDateRangeError`.
+- **Ruta y Esquema:** `GET /v1/costs` en `app/api/v1/costs.py` con autenticación `X-API-Key`. Parámetro obligatorio `group_by` (`feature|customer|model`) y filtros opcionales `from` y `to` mapeados con `Query(alias="from")` y `Query(alias="to")`.
+- **Serialización:** Esquema `CostReportItem` con `key`, `total_cost_usd` serializado como string con 8 decimales (nunca float), `total_input_tokens`, `total_output_tokens` y `calls`, ordenados por costo descendente.
+- **Manejo de Errores Unificado:** `group_by` inválido o ausente, fechas mal formadas o `from > to` devuelven 422 con código `validation_error` en el formato centralizado `{code, message, details}`.
+- **Tests:** Suite exhaustiva de tests unitarios y de integración en base `tokenledger_test` cubriendo agregación por feature, customer (con nulos como "unassigned"), model, orden descendente, suma coincidente con total global, filtro con inclusión de día final, auth 401, respuesta 200 vacía y casos 422.
+
 ---
+
 
 ## Pendientes y avisos
 - [x] **Formato de errores unificado (Resuelto en Mini-paso 6.1):** Formato único consistente `{"code", "message", "details"}` documentado e implementado para 401, 422 (modelo y validación Pydantic) y HTTP general.

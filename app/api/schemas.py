@@ -47,3 +47,20 @@ class EventResponse(BaseModel):
         if isinstance(v, Decimal):
             return f"{v:.8f}"
         return str(v)
+
+
+class CostReportItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    key: str
+    total_cost_usd: str
+    total_input_tokens: int
+    total_output_tokens: int
+    calls: int
+
+    @field_validator("total_cost_usd", mode="before")
+    @classmethod
+    def serialize_total_cost_usd(cls, v: Any) -> str:
+        if isinstance(v, Decimal):
+            return f"{v:.8f}"
+        return str(v)

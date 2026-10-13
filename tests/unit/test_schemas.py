@@ -4,7 +4,7 @@ from decimal import Decimal
 import pytest
 from pydantic import ValidationError
 
-from app.api.schemas import EventCreate, EventResponse
+from app.api.schemas import CostReportItem, EventCreate, EventResponse
 
 
 def test_event_create_valid_minimal() -> None:
@@ -245,3 +245,22 @@ def test_event_response_with_str_cost_usd() -> None:
         status="ok",
     )
     assert resp.cost_usd == "0.01050000"
+
+
+def test_cost_report_item_serializes_decimal_to_string() -> None:
+    item = CostReportItem(
+        key="document_summary",
+        total_cost_usd=Decimal("0.01050000"),
+        total_input_tokens=1000,
+        total_output_tokens=500,
+        calls=3,
+    )
+    assert item.total_cost_usd == "0.01050000"
+    assert isinstance(item.total_cost_usd, str)
+    assert not isinstance(item.total_cost_usd, float)
+
+    dumped = item.model_dump(mode="json")
+    assert dumped["total_cost_usd"] == "0.01050000"
+    assert isinstance(dumped["total_cost_usd"], str)
+    assert not isinstance(dumped["total_cost_usd"], float)
+    assert dumped["calls"] == 3

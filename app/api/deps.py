@@ -10,6 +10,7 @@ from app.repositories.events import EventRepository
 from app.repositories.prices import PriceRepository
 from app.services.cost_calculator import CostCalculator
 from app.services.events import EventService
+from app.services.reports import ReportService
 
 
 def verify_api_key(
@@ -40,3 +41,11 @@ def get_event_service(
         price_repo=price_repo,
         cost_calculator=cost_calculator,
     )
+
+
+def get_report_service(
+    session: Annotated[Session, Depends(get_session)],
+) -> ReportService:
+    """Dependency provider for ReportService."""
+    event_repo = EventRepository(session)
+    return ReportService(event_repo=event_repo)
