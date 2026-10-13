@@ -41,3 +41,8 @@ ignore = []
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[dependency-groups]
+dashboard = [
+    "streamlit>=1.38.0",
+]

@@ -18,7 +18,7 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
 | **Paso 8** | CI en GitHub Actions | **Completado** | Workflow `.github/workflows/ci.yml` con Postgres 16, uv, ruff y cobertura ≥ 80%. |
 | **Mini-paso 8.1** | Actualización de versiones de GitHub Actions | **Completado** | `actions/checkout@v7` y `astral-sh/setup-uv@v10.3.0` (tag inmutable verificado en releases oficiales). |
 | **Paso 9** | SDK Python (`sdk/tokenledger`) | Pendiente | Envoltorio con `tl.track(...)` sin bloqueo. |
-| **Paso 10** | Dashboard en Streamlit | Pendiente | Métricas, filtros y gráficos de gasto. |
+| **Paso 10** | Dashboard en Streamlit | **Completado** | Pantalla única con métricas, gráficos horizontales con acento, tablas y estados de error/vacío. |
 | **Paso 11** | Seed de datos de demostración | Pendiente | Generación de ~300 eventos sintéticos. |
 | **Paso 12** | Despliegue en la nube | Pendiente | Despliegue público con base gestionada. |
 | **Paso 13** | README y `DECISIONS.md` | Pendiente | Arquitectura y registro de decisiones de diseño. |
@@ -84,6 +84,15 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
   - `astral-sh/setup-uv`: versión completa `v10.3.0` (debido al uso de tags inmutables desde v8.0.0).
 - **Workflow:** Actualizado `.github/workflows/ci.yml` únicamente en las referencias `uses` para utilizar `actions/checkout@v7` y `astral-sh/setup-uv@v10.3.0`, preservando la configuración del servicio Postgres y comandos de build/test.
 - **Validación:** Sintaxis YAML validada con `yaml.safe_load`, suite de tests completa y linters pasando al 100%.
+
+### Paso 10 — Dashboard en Streamlit
+- **Módulo de datos (`dashboard/data.py`):** Funciones puras independientes de Streamlit para consumo de API con `httpx`, cálculo de totales (`calculate_totals`), costo medio por llamada seguro ante divisiones por cero, detección de feature más cara (`get_top_feature`), ordenamiento descendente y formateo para gráficos (`prepare_chart_data`) y tablas (`prepare_table_data`).
+- **Manejo de Errores y Estados de Red:** Excepciones específicas (`MissingConfigurationError`, `UnauthorizedError`, `ApiConnectionError`, `ApiError`) que permiten mapear de forma amigable los estados definidos en `docs/03-APP-FLOW.md`: variables faltantes, 401 unauthorized sin filtrar clave, caída de red / API no disponible y respuesta vacía (invitando a ejecutar seed de demo).
+- **Interfaz Streamlit (`dashboard/app.py`):** Pantalla única vertical conforme a `docs/04-UI-UX-BRIEF.md`: filtros de fecha con rango por defecto de últimos 14 días, 4 tarjetas de métricas destacadas, gráficos de barras horizontales (con etiquetas visibles, orden descendente y barra principal destacada con color de acento `#F59E0B` sobre azul `#2563EB`) y tablas comparativas formateadas.
+- **Tema y Configuración:** `.streamlit/config.toml` con paleta corporativa neutra (`primaryColor="#2563EB"`, `backgroundColor="#FFFFFF"`, `secondaryBackgroundColor="#F8FAFC"`, `textColor="#0F172A"`).
+- **Aislamiento de Dependencias:** `streamlit` aislado en dependency group `dashboard` en `pyproject.toml`, sin contaminar el entorno base de la API ni la imagen de producción ni el pipeline de CI. Actualizado `uv.lock`.
+- **Docker Compose:** Agregado servicio `dashboard` en `docker-compose.yml` conectado a la red interna hacia `http://api:8000`. Puertos del host parametrizados con `API_HOST_PORT` (default 8000) y `DASHBOARD_HOST_PORT` (default 8501) documentados en `.env.example`.
+- **Tests Unitarios:** 14 tests exhaustivos en `tests/unit/test_dashboard_data.py` cubriendo cálculos con Decimal, división por cero, ordenamiento, formateo de gráficos/tablas y manejo de errores HTTP y de red.
 
 ---
 

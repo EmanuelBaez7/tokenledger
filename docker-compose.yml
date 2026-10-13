@@ -24,13 +24,27 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "${API_HOST_PORT:-8000}:8000"
     environment:
       DATABASE_URL: ${API_DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-tokenledger}}
       API_KEY: ${API_KEY:-change-me}
     depends_on:
       db:
         condition: service_healthy
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: dashboard/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${DASHBOARD_HOST_PORT:-8501}:8501"
+    environment:
+      API_BASE_URL: ${API_BASE_URL:-http://api:8000}
+      API_KEY: ${API_KEY:-change-me}
+    depends_on:
+      - api
+
 
 volumes:
   db_data:
