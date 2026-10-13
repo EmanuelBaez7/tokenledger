@@ -15,7 +15,7 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
 | **Paso 6** | Ingesta de eventos (`POST /v1/events`) y autenticación | **Completado** | Auth con `X-API-Key`, esquemas Pydantic `extra="forbid"`, `EventService`, error 422 `unknown_model_price`, `cost_usd` serializado como string. |
 | **Mini-paso 6.1** | Unificación del formato de errores (SPEC §10) | **Completado** | Formato único `{"code", "message", "details"}` en toda la API; sin `detail` duplicado. |
 | **Paso 7** | Reportes (`GET /v1/costs`) | **Completado** | `ReportService`, endpoint de costos agregados por dimensión, filtros de fechas y validaciones 422/401 unificadas. |
-| **Paso 8** | CI en GitHub Actions | Pendiente | Workflow con Postgres, ruff y cobertura ≥ 80%. |
+| **Paso 8** | CI en GitHub Actions | **Completado** | Workflow `.github/workflows/ci.yml` con Postgres 16, uv, ruff y cobertura ≥ 80%. |
 | **Paso 9** | SDK Python (`sdk/tokenledger`) | Pendiente | Envoltorio con `tl.track(...)` sin bloqueo. |
 | **Paso 10** | Dashboard en Streamlit | Pendiente | Métricas, filtros y gráficos de gasto. |
 | **Paso 11** | Seed de datos de demostración | Pendiente | Generación de ~300 eventos sintéticos. |
@@ -70,9 +70,17 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
 - **Manejo de Errores Unificado:** `group_by` inválido o ausente, fechas mal formadas o `from > to` devuelven 422 con código `validation_error` en el formato centralizado `{code, message, details}`.
 - **Tests:** Suite exhaustiva de tests unitarios y de integración en base `tokenledger_test` cubriendo agregación por feature, customer (con nulos como "unassigned"), model, orden descendente, suma coincidente con total global, filtro con inclusión de día final, auth 401, respuesta 200 vacía y casos 422.
 
+### Paso 8 — CI en GitHub Actions
+- **Workflow:** `.github/workflows/ci.yml` configurado para ejecutarse en `push` y `pull_request` sobre `main` y `master`, con `permissions: contents: read` y `timeout-minutes: 10`.
+- **Servicios:** Contenedor de servicio PostgreSQL 16 con healthcheck (`pg_isready`), puertos mapeados (`5432:5432`) y credenciales de superusuario `postgres` para permitir crear y migrar la base `tokenledger_test` durante la suite de tests de integración.
+- **Instalación y Orden de Ejecución:** Instalación oficial de `uv` con acción `astral-sh/setup-uv@v5` (con caché habilitada y Python 3.12), ejecutando en orden: `uv sync --frozen`, `uv run ruff check .`, `uv run ruff format --check .` y `uv run pytest --cov=app --cov-fail-under=80`.
+- **README y Badge:** Creación de `README.md` con título, descripción y badge de CI apuntando a `https://github.com/EmanuelBaez7/tokenledger/actions/workflows/ci.yml/badge.svg`.
+- **Verificación:** Validación de sintaxis YAML con `yaml.safe_load`; ejecución local de cobertura obteniendo 96.96% (umbral ≥ 80% superado).
+
 ---
 
-
 ## Pendientes y avisos
+- [ ] Crear el repo remoto en GitHub, hacer push y comprobar que el workflow queda en verde.
 - [x] **Formato de errores unificado (Resuelto en Mini-paso 6.1):** Formato único consistente `{"code", "message", "details"}` documentado e implementado para 401, 422 (modelo y validación Pydantic) y HTTP general.
 - En este equipo Windows reserva los puertos 7918-8217; para correr uvicorn en local usa `--port 8500. Los tests no se ven afectados.
+
