@@ -30,3 +30,9 @@ Para el detalle consulta `docs/` (PRD, TRD, App Flow, UI/UX, Schema, Implementat
 3. Salida de los comandos de verificación.
 4. Qué NO hiciste a propósito.
 5. Una sugerencia para el siguiente paso.
+
+## Flujo de sesión
+- Un paso de PLAN.md por sesión. No avances al siguiente sin que el humano verifique.
+- Al empezar: lee CLAUDE.md, SPEC.md y PROGRESS.md; revisa git log y git status.
+- Al terminar: actualiza PROGRESS.md (paso hecho, decisiones tomadas, pendientes) y no hagas commit; lo hace el humano.
+- Toda decisión importante se escribe en un archivo del repo (docs/ o DECISIONS.md), nunca solo en el chat.

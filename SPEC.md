@@ -94,7 +94,7 @@ Python 3.12, uv, FastAPI, Pydantic v2, pydantic-settings, SQLAlchemy 2, Alembic,
 - Cobertura de tests ≥ 80% en `app/` y `sdk/`.
 - `ruff check` y `ruff format --check` limpios.
 - Secretos solo por variables de entorno; `.env.example` sin valores reales.
-- Respuestas de error en JSON consistente.
+- Respuestas de error en JSON consistente con formato único: `{"code": "<string>", "message": "<texto>", "details": <opcional>}` (401: `unauthorized`, 422 modelo: `unknown_model_price` con modelo en details, 422 validación: `validation_error` con lista `{field, message}` sin datos sensibles).
 
 ## 11. Criterios de aceptación (v0.1 terminada)
 1. `docker compose up` y luego `curl /health` devuelve ok.

@@ -13,6 +13,7 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
 | **Paso 4** | Precios y calculadora de costos (`CostCalculator`) | Completado | Patrón Strategy, Decimal a 8 decimales, seed YAML. |
 | **Paso 5** | Repositorios (`EventRepository`, `PriceRepository`) | Completado | Consultas SQL y agregaciones por dimensión. |
 | **Paso 6** | Ingesta de eventos (`POST /v1/events`) y autenticación | **Completado** | Auth con `X-API-Key`, esquemas Pydantic `extra="forbid"`, `EventService`, error 422 `unknown_model_price`, `cost_usd` serializado como string. |
+| **Mini-paso 6.1** | Unificación del formato de errores (SPEC §10) | **Completado** | Formato único `{"code", "message", "details"}` en toda la API; sin `detail` duplicado. |
 | **Paso 7** | Reportes (`GET /v1/costs`) | Pendiente | `ReportService` y endpoint agregado por dimensión. |
 | **Paso 8** | CI en GitHub Actions | Pendiente | Workflow con Postgres, ruff y cobertura ≥ 80%. |
 | **Paso 9** | SDK Python (`sdk/tokenledger`) | Pendiente | Envoltorio con `tl.track(...)` sin bloqueo. |
@@ -57,8 +58,13 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
 - **Ruta:** `POST /v1/events` devuelve 201 con el evento creado y `cost_usd` serializado como string (nunca float). Sin lógica de negocio ni SQL en la ruta.
 - **Tests:** Suite de tests unitarios y de integración con base de test aislada (`tokenledger_test`) y API key provista mediante fixture.
 
+### Mini-paso 6.1 — Unificación del formato de errores (SPEC §10)
+- **Formato único:** Toda la API responde a errores con `{"code": "<string>", "message": "<texto legible>", "details": <opcional>}` sin campo `detail` duplicado.
+- **Manejadores centralizados:** Módulo `app/api/errors.py` con manejadores para `StarletteHTTPException` (401 `unauthorized`, 404 `not_found`, etc.), `UnknownModelPriceError` (422 `unknown_model_price` con `details={"model": ...}`) y `RequestValidationError` (422 `validation_error`, `message="Request validation failed"`, y `details` con lista sanitizada de `{field, message}` sin exponer inputs sensibles).
+- **Documentación:** Actualizado `SPEC.md` §10 y `docs/05-BACKEND-SCHEMA.md`.
+
 ---
 
 ## Pendientes y avisos
-- Unificar el formato de errores: los 422 de validación de Pydantic devuelven {"detail":[...]} sin code ni message, a diferencia del 401 y unknown_model_price (SPEC §10). Arreglar antes del despliegue.
-- En este equipo Windows reserva los puertos 7918-8217; para correr uvicorn en local usa --port 8500. Los tests no se ven afectados.
+- [x] **Formato de errores unificado (Resuelto en Mini-paso 6.1):** Formato único consistente `{"code", "message", "details"}` documentado e implementado para 401, 422 (modelo y validación Pydantic) y HTTP general.
+- En este equipo Windows reserva los puertos 7918-8217; para correr uvicorn en local usa `--port 8500. Los tests no se ven afectados.

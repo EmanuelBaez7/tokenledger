@@ -63,6 +63,14 @@ Sin registro ni sesiones. Cada petición lleva `X-API-Key`; el servidor la compa
 - Agrupación y fechas: eventos con customer NULL se agrupan bajo la clave 'unassigned' (COALESCE); 'from' es inclusivo desde 00:00 UTC y 'to' cubre el día completo (created_at < to + 1 día).
 - La API ignora cualquier `cost_usd`, `id` o `created_at` que envíe el cliente (los rechaza con 422 si se incluyen, para evitar confusión).
 
+## Formato unificado de respuestas de error
+Todas las respuestas de error siguen el esquema único `{"code": "<string>", "message": "<texto>", "details": <opcional>}`:
+- `401 Unauthorized`: `code: "unauthorized"`.
+- `422 Unprocessable Content`:
+  - Modelo sin precio: `code: "unknown_model_price"`, `details: {"model": "<modelo>"}`.
+  - Validación de esquema Pydantic: `code: "validation_error"`, `message: "Request validation failed"`, `details: [{"field": "<campo>", "message": "<motivo>"}]` (sin filtrar datos sensibles).
+- Errores de ruta o generales: `code: "not_found"` o `code: "http_error"`.
+
 ## Ejemplo verificable
 Con un precio de ejemplo (entrada 3.00, salida 15.00 USD/Mtok), 1 000 tokens de entrada y 500 de salida:
 `cost_usd = 1000/1 000 000 × 3.00 + 500/1 000 000 × 15.00 = 0.003 + 0.0075 = 0.01050000`

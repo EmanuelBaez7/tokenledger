@@ -115,7 +115,9 @@ def test_create_event_401_missing_key(client: TestClient) -> None:
     response = client.post("/v1/events", json=payload)
     assert response.status_code == 401
     data = response.json()
-    assert data.get("code") == "unauthorized"
+    assert data["code"] == "unauthorized"
+    assert data["message"] == "Invalid or missing API key"
+    assert "detail" not in data
 
 
 def test_create_event_401_invalid_key(client: TestClient) -> None:
@@ -133,7 +135,9 @@ def test_create_event_401_invalid_key(client: TestClient) -> None:
     )
     assert response.status_code == 401
     data = response.json()
-    assert data.get("code") == "unauthorized"
+    assert data["code"] == "unauthorized"
+    assert data["message"] == "Invalid or missing API key"
+    assert "detail" not in data
 
 
 def test_create_event_422_unknown_model_price(
@@ -154,9 +158,10 @@ def test_create_event_422_unknown_model_price(
     )
     assert response.status_code == 422
     data = response.json()
-    assert data.get("code") == "unknown_model_price"
-    assert data.get("model") == "non-existent-gpt-model"
-    assert "non-existent-gpt-model" in data.get("message", "")
+    assert data["code"] == "unknown_model_price"
+    assert data["details"] == {"model": "non-existent-gpt-model"}
+    assert "non-existent-gpt-model" in data["message"]
+    assert "detail" not in data
 
 
 def test_create_event_422_negative_tokens(
@@ -176,6 +181,15 @@ def test_create_event_422_negative_tokens(
         headers={"X-API-Key": api_key},
     )
     assert response.status_code == 422
+    data = response.json()
+    assert data["code"] == "validation_error"
+    assert data["message"] == "Request validation failed"
+    assert "detail" not in data
+    assert isinstance(data["details"], list)
+    assert any(
+        item.get("field") == "input_tokens" and "message" in item
+        for item in data["details"]
+    )
 
 
 def test_create_event_422_extra_field_cost_usd(
@@ -196,6 +210,15 @@ def test_create_event_422_extra_field_cost_usd(
         headers={"X-API-Key": api_key},
     )
     assert response.status_code == 422
+    data = response.json()
+    assert data["code"] == "validation_error"
+    assert data["message"] == "Request validation failed"
+    assert "detail" not in data
+    assert isinstance(data["details"], list)
+    assert any(
+        item.get("field") == "cost_usd" and "message" in item
+        for item in data["details"]
+    )
 
 
 def test_create_event_422_extra_field_id_and_created_at(
@@ -217,6 +240,14 @@ def test_create_event_422_extra_field_id_and_created_at(
         headers={"X-API-Key": api_key},
     )
     assert response.status_code == 422
+    data = response.json()
+    assert data["code"] == "validation_error"
+    assert data["message"] == "Request validation failed"
+    assert "detail" not in data
+    assert isinstance(data["details"], list)
+    assert any(
+        item.get("field") == "id" and "message" in item for item in data["details"]
+    )
 
 
 def test_health_remains_public_without_auth(client: TestClient) -> None:
@@ -229,6 +260,6 @@ def test_http_exception_string_detail_format(client: TestClient) -> None:
     response = client.get("/nonexistent-endpoint")
     assert response.status_code == 404
     data = response.json()
-    assert data.get("code") == "error"
-    assert "detail" in data
+    assert data["code"] == "not_found"
     assert "message" in data
+    assert "detail" not in data
