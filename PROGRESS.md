@@ -19,7 +19,7 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
 | **Mini-paso 8.1** | Actualización de versiones de GitHub Actions | **Completado** | `actions/checkout@v7` y `astral-sh/setup-uv@v10.3.0` (tag inmutable verificado en releases oficiales). |
 | **Paso 9** | SDK Python (`sdk/tokenledger`) | Pendiente | Envoltorio con `tl.track(...)` sin bloqueo. |
 | **Paso 10** | Dashboard en Streamlit | **Completado** | Pantalla única con métricas, gráficos horizontales con acento, tablas y estados de error/vacío. |
-| **Paso 11** | Seed de datos de demostración | Pendiente | Generación de ~300 eventos sintéticos. |
+| **Paso 11** | Seed de datos de demostración | **Completado** | ~300 eventos sintéticos reproducibles; `traduccion` top feature, `globex` top customer. |
 | **Paso 12** | Despliegue en la nube | Pendiente | Despliegue público con base gestionada. |
 | **Paso 13** | README y `DECISIONS.md` | Pendiente | Arquitectura y registro de decisiones de diseño. |
 | **Paso 14** | Cierre y tag `v0.1.0` | Pendiente | Verificación de criterios de aceptación. |
@@ -93,6 +93,18 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
 - **Aislamiento de Dependencias:** `streamlit` aislado en dependency group `dashboard` en `pyproject.toml`, sin contaminar el entorno base de la API ni la imagen de producción ni el pipeline de CI. Actualizado `uv.lock`.
 - **Docker Compose:** Agregado servicio `dashboard` en `docker-compose.yml` conectado a la red interna hacia `http://api:8000`. Puertos del host parametrizados con `API_HOST_PORT` (default 8000) y `DASHBOARD_HOST_PORT` (default 8501) documentados en `.env.example`.
 - **Tests Unitarios:** 14 tests exhaustivos en `tests/unit/test_dashboard_data.py` cubriendo cálculos con Decimal, división por cero, ordenamiento, formateo de gráficos/tablas y manejo de errores HTTP y de red.
+
+---
+
+
+### Paso 11 — Seed de datos de demostración
+- **Script:** `scripts/seed_demo.py` escribe directamente en la base (no vía API) usando `PriceRepository`, `CostCalculator` y `EventRepository`, con `created_at` histórico configurable por evento. Protección de host: rechaza DATABASE_URL no-local salvo `--allow-remote`; pide confirmación interactiva salvo `--yes`.
+- **Función pura:** `generate_demo_events(rng, now)` genera ~300 `RawEvent` sin acceso a DB; reproducible con semilla fija 42. Sin `cost_usd` en el valor puro (se calcula al insertar).
+- **Historia del dashboard:** `traduccion` es la feature más cara (muchos tokens de salida), `globex` es el cliente que más gasta (peso alto + spike en día 10 con 4× eventos extra con el modelo más caro). Tendencia ligeramente creciente de 0.8× a 1.2× por día. ~3% de eventos `status=error` con tokens 0 y costo 0.
+- **Tests unitarios (16):** cantidad ~300, timestamps UTC, sin futuro, dentro de 14 días, 4 features y 5 customers, eventos sin customer, tasa de error, reproducibilidad exacta con misma semilla, traduccion top feature, globex top customer, todos los modelos presentes.
+- **Test de integración (8):** inserta en `tokenledger_test`, verifica que suma por feature == suma por customer, `traduccion` primero por costo, `globex` primero por costo, eventos error con costo 0, tipos Decimal, todos los grupos presentes.
+- **Dashboard:** mensaje de estado vacío actualizado a `uv run python scripts/seed_demo.py`.
+- **Decisión:** El seed escribe directo en la base (no por la API) porque la API rechaza con 422 cualquier campo `created_at` enviado por el cliente, lo que haría imposible generar eventos históricos con fechas pasadas.
 
 ---
 
