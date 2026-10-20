@@ -17,7 +17,7 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
 | **Paso 7** | Reportes (`GET /v1/costs`) | **Completado** | `ReportService`, endpoint de costos agregados por dimensión, filtros de fechas y validaciones 422/401 unificadas. |
 | **Paso 8** | CI en GitHub Actions | **Completado** | Workflow `.github/workflows/ci.yml` con Postgres 16, uv, ruff y cobertura ≥ 80%. |
 | **Mini-paso 8.1** | Actualización de versiones de GitHub Actions | **Completado** | `actions/checkout@v7` y `astral-sh/setup-uv@v10.3.0` (tag inmutable verificado en releases oficiales). |
-| **Paso 9** | SDK Python (`sdk/tokenledger`) | Pendiente | Envoltorio con `tl.track(...)` sin bloqueo. |
+| **Paso 9** | SDK Python (`sdk/tokenledger`) | **Completado** | Envoltorio con `tl.track(...)` sin bloqueo, cola daemon y tolerancia total a fallos. |
 | **Paso 10** | Dashboard en Streamlit | **Completado** | Pantalla única con métricas, gráficos horizontales con acento, tablas y estados de error/vacío. |
 | **Paso 11** | Seed de datos de demostración | **Completado** | ~300 eventos sintéticos reproducibles; `traduccion` top feature, `globex` top customer. |
 | **Paso 12** | Despliegue en la nube | Pendiente | Despliegue público con base gestionada. |
@@ -85,6 +85,19 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
 - **Workflow:** Actualizado `.github/workflows/ci.yml` únicamente en las referencias `uses` para utilizar `actions/checkout@v7` y `astral-sh/setup-uv@v10.3.0`, preservando la configuración del servicio Postgres y comandos de build/test.
 - **Validación:** Sintaxis YAML validada con `yaml.safe_load`, suite de tests completa y linters pasando al 100%.
 
+### Paso 9 — SDK Python (`sdk/tokenledger`)
+- **Cliente no bloqueante (`sdk/tokenledger/client.py`):** Clase `TokenLedger(base_url, api_key, timeout=2.0, http_client=None)` con cola acotada (`maxsize=1000`) y worker daemon en segundo plano. Exportado en `sdk/tokenledger/__init__.py`. Sin dependencias de `app/` ni de los SDKs oficiales de Anthropic u OpenAI.
+- **Medición e Inferencia:** `track(fn, provider, feature, customer=None, model=None)` mide latencia en ms con `time.perf_counter`, devuelve exactamente el objeto original del LLM, y extrae tokens de forma desacoplada (`input_tokens`/`output_tokens` para Anthropic, `prompt_tokens`/`completion_tokens` para OpenAI; modelo de `response.model` o parámetro explícito). Si faltan tokens o modelo, registra warning y no envía el evento sin romper el flujo.
+- **Manejo de Errores y Excepciones:** Si `fn()` lanza una excepción, re-lanza exactamente la excepción original sin envolverla; si se pasó `model`, encola un evento `status="error"` con tokens 0; si no se pasó `model`, registra un warning. Los fallos internos o de red del SDK son capturados en el worker y registrados con `logging.getLogger("tokenledger")`, nunca propagados al usuario ni filtrando la API key.
+- **Drenado y Cierre:** Métodos `flush(timeout=5.0)` con espera acotada sobre `all_tasks_done` y `close()` para liberar recursos.
+- **Decisión:** Para los tests de integración con hilo secundario, se inyecta `TestClient(app)` como `http_client`, omitiendo el parámetro `timeout` a nivel de petición para evitar advertencias de Starlette.
+- **Tests Unitarios (16):** Extracción para Anthropic y OpenAI, retorno de objeto idéntico, latencia, tolerancia a fallos de red, re-lanzamiento de excepción con y sin modelo, falta de usage/model, descarte sin bloqueo con cola llena, entrega con `flush()`, y comprobación estricta de que la API key no aparece en logs (`caplog`).
+- **Test de Integración (1):** Envío asíncrono con `tl.track()`, drenado con `tl.flush()`, y verificación de persistencia y agregación exacta de costos en `/v1/costs`.
+- **CI y Cobertura:** Workflow de GitHub Actions actualizado con `--cov=app --cov=sdk --cov-fail-under=80`. Cobertura total alcanzada: 94.37%.
+
+---
+
+
 ### Paso 10 — Dashboard en Streamlit
 - **Módulo de datos (`dashboard/data.py`):** Funciones puras independientes de Streamlit para consumo de API con `httpx`, cálculo de totales (`calculate_totals`), costo medio por llamada seguro ante divisiones por cero, detección de feature más cara (`get_top_feature`), ordenamiento descendente y formateo para gráficos (`prepare_chart_data`) y tablas (`prepare_table_data`).
 - **Manejo de Errores y Estados de Red:** Excepciones específicas (`MissingConfigurationError`, `UnauthorizedError`, `ApiConnectionError`, `ApiError`) que permiten mapear de forma amigable los estados definidos en `docs/03-APP-FLOW.md`: variables faltantes, 401 unauthorized sin filtrar clave, caída de red / API no disponible y respuesta vacía (invitando a ejecutar seed de demo).
@@ -111,6 +124,7 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
 
 ## Pendientes y avisos
 - [ ] Crear el repo remoto en GitHub, hacer push y comprobar que el workflow queda en verde.
+- [ ] El SDK se importa como sdk.tokenledger; empaquetarlo como paquete instalable queda para la v0.2.
 - [x] **Formato de errores unificado (Resuelto en Mini-paso 6.1):** Formato único consistente `{"code", "message", "details"}` documentado e implementado para 401, 422 (modelo y validación Pydantic) y HTTP general.
 - En este equipo Windows reserva los puertos 7918-8217; para correr uvicorn en local usa `--port 8500. Los tests no se ven afectados.
 

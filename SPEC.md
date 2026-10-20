@@ -56,11 +56,12 @@ Autenticación: header `X-API-Key` comparado con la variable de entorno `API_KEY
 ## 7. SDK (`sdk/tokenledger`)
 ```python
 tl = TokenLedger(base_url="http://localhost:8000", api_key="...")
-resp = tl.track(lambda: client.messages.create(...), provider="anthropic", feature="resumen", customer="acme")
+resp = tl.track(lambda: client.messages.create(...), provider="anthropic", feature="resumen", customer="acme", model="claude-3-5-sonnet-20241022")
 ```
 - Mide latencia, lee el uso de tokens de la respuesta (Anthropic: `usage.input_tokens/output_tokens`; OpenAI: `usage.prompt_tokens/completion_tokens`) y envía el evento en un hilo aparte.
+- Parámetro opcional `model`: si no se pasa, se extrae de `response.model`. Si falta el modelo o el uso de tokens en la respuesta, se registra un warning y no se envía el evento, sin lanzar excepción.
 - **Si el envío falla, nunca lanza excepción al usuario** (se registra un warning). Siempre devuelve la respuesta original del LLM.
-- Si la llamada al LLM lanza excepción: registra evento `status=error` con tokens 0 y vuelve a lanzar la excepción original.
+- Si la llamada al LLM lanza excepción: si se pasó `model`, registra evento `status=error` con tokens 0 y ese modelo; si no se pasó `model`, no hay evento válido y solo se registra un warning. En ambos casos vuelve a lanzar la excepción original sin envolverla.
 
 ## 8. Arquitectura
 Monolito modular, capas con dependencias en un solo sentido:
