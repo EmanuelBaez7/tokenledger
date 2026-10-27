@@ -164,3 +164,8 @@ Completado después del mini-paso 9.2, según la autorización del dueño. Dos c
 - Cobertura app+sdk **95.37%**; SDK redondeada **90%**. Persiste un warning conocido de Starlette/httpx. No se agregaron dependencias ni se modificaron API, base de datos o dashboard.
 - [Auditoría actualizada](docs/AUDITORIA-HANDOFF.md): A1 y A2 resueltos, conservando evidencia histórica; los demás pendientes y los pasos 12–14 permanecen abiertos. No se hizo push, amend, reset ni force.
 
+## Ajuste de referencias y privacidad documental
+
+- `docs/AUDITORIA-HANDOFF.md` identifica por mensaje exacto el commit del SDK que era local al auditar; las correcciones y el traspaso ya emplean sus mensajes, conservando la evidencia histórica.
+- `AGENTS.md` y `CLAUDE.md` prohíben datos del equipo y personales en documentos, informes y mensajes de commit, y requieren rutas relativas al repositorio. Sin cambios de código ni avance de paso.
+

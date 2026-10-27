@@ -17,6 +17,7 @@ Para el detalle consulta `docs/` (PRD, TRD, App Flow, UI/UX, Schema, Implementat
 - Capas: `api → services → repositories → db`. Prohibido SQL fuera de `repositories/`. Prohibida lógica de negocio en `api/`.
 - Commits convencionales: `feat:`, `fix:`, `test:`, `chore:`, `docs:`.
 - Nunca escribir secretos en el código. Todo por variables de entorno.
+- Privacidad: en documentos, informes y mensajes de commit no incluyas rutas absolutas del equipo, nombres de usuario de Windows, correos personales ni zonas horarias; usa rutas relativas al repositorio.
 
 ## Comandos
 - Instalar: `uv sync`

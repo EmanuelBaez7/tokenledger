@@ -1,6 +1,6 @@
 # Auditoría de traspaso a Codex
 
-Fecha: **2026-10-27**. Revisión de `main` en `2cc3234`, antes del commit documental de este informe.
+Fecha: **2026-10-27**. Revisión de `main` en el commit `feat: python sdk with non-blocking tracking`, antes del commit documental de este informe.
 
 **Actualización del mini-paso 9.2:** M3, M2 y M4 están resueltos. La evidencia original se conserva como fotografía de la auditoría inicial; el cierre añadido al final registra las correcciones y su validación actual.
 
@@ -18,7 +18,7 @@ Las pruebas existentes pasan, pero no demuestran cumplimiento completo: hay fall
 
 Estados: **OK** = artefactos y commit localizados; **aviso** = desviación o aceptación incompleta; **fallo** = problema reproducido. Un paso pendiente no implica una regresión.
 
-| Paso | Commit esperado en PLAN.md | Commit real: hash y mensaje | Archivos clave presentes | Estado |
+| Paso | Commit esperado en PLAN.md | Commit real: hash publicado o mensaje exacto | Archivos clave presentes | Estado |
 |---|---|---|---|---|
 | 0 | `chore: add spec, plan and project rules` | `d79aeb2 chore: add spec, plan and project rules` | SPEC, PLAN, CLAUDE, seis docs, .gitignore | OK; no hay skills del kit versionadas |
 | 1 | `feat: project skeleton with health endpoint` | `37fc30a feat: skeleton, docker, db models, cost calculator and repositories` | pyproject, app/main.py, test_health.py | aviso: comparte commit con 2–5 |
@@ -32,7 +32,7 @@ Estados: **OK** = artefactos y commit localizados; **aviso** = desviación o ace
 | 7 | `feat: cost reporting endpoint` | `929c332 feat: cost reporting endpoint` | v1/costs.py, services/reports.py, tests | aviso: `to=9999-12-31` falla |
 | 8 | `ci: lint, tests and coverage gate` | `9c77a5d ci: lint, tests and coverage gate` | ci.yml, README con badge | aviso: resultado remoto no inspeccionado |
 | 8.1 | No definido en PLAN; actualización de acciones | `d8fb3ac ci: update github actions versions` | checkout@v7, setup-uv@v10.3.0 | OK en archivos; ejecución remota por comprobar |
-| 9 | `feat: python sdk with non-blocking tracking` | `2cc3234 feat: python sdk with non-blocking tracking` | sdk/tokenledger, 16 tests unitarios y 1 de integración | fallo en casos adicionales; sin push |
+| 9 | `feat: python sdk with non-blocking tracking` | `feat: python sdk with non-blocking tracking` | sdk/tokenledger, 16 tests unitarios y 1 de integración | fallo en casos adicionales; sin push |
 | 10 | `feat: streamlit dashboard` | `b8dd2f2 feat: streamlit dashboard` | dashboard/app.py, data.py, Dockerfile, tema, 14 tests | aviso: conversión a float; UI no inspeccionada |
 | 11 | `chore: demo data generator` | `c8acf5a chore: demo data generator` | scripts/seed_demo.py, 16 tests unitarios y 8 de integración | fallo: comando publicado no importa app |
 | 12 | `docs: deployment guide and production-ready dockerfile` | Ninguno | docs/DEPLOY.md ausente; imágenes aún sin preparar | aviso: pendiente, sin evidencia de inicio |
@@ -59,7 +59,7 @@ Corrección del contexto recibido: **Paso 0 sí tiene commit propio**. El commit
 | d8fb3ac | 12 | 3 | 15 | 0: versiones CI/progreso |
 | b8dd2f2 | 1726 | 2 | 1728 | 1 |
 | c8acf5a | 755 | 2 | 757 | 2 |
-| 2cc3234 | 818 | 5 | 823 | 2 |
+| `feat: python sdk with non-blocking tracking` | 818 | 5 | 823 | 2 |
 
 Cinco commits superan unas 800 líneas; en dashboard 948 líneas añadidas son del lockfile. Todos los commits de implementación incorporan tests; eso no demuestra que sus casos fueran suficientes ni que CI pasara históricamente. Los cuatro commits sin tests tienen alcance documental o de CI razonable.
 
@@ -73,7 +73,7 @@ Comando: `git log --all --format="%h %an <%ae> | %cn <%ce>"`.
 
 En **los 11 commits alcanzables**, autor y committer son exactamente **Emanuel Baez <209174399+EmanuelBaez7@users.noreply.github.com>**. Sin excepciones:
 
-| Hash | Autor | Committer |
+| Commit | Autor | Committer |
 |---|---|---|
 | d79aeb2 | Emanuel Baez, noreply indicado | Igual |
 | 37fc30a | Emanuel Baez, noreply indicado | Igual |
@@ -85,13 +85,13 @@ En **los 11 commits alcanzables**, autor y committer son exactamente **Emanuel B
 | d8fb3ac | Emanuel Baez, noreply indicado | Igual |
 | b8dd2f2 | Emanuel Baez, noreply indicado | Igual |
 | c8acf5a | Emanuel Baez, noreply indicado | Igual |
-| 2cc3234 | Emanuel Baez, noreply indicado | Igual |
+| `feat: python sdk with non-blocking tracking` | Emanuel Baez, noreply indicado | Igual |
 
 `git config --show-origin --get-all user.name` y `user.email` devuelven una entrada cada uno desde `~/.gitconfig`, con esa identidad. `git config --local --get-regexp '^(user\.|include|includeIf)'` no devuelve entradas: **sin override local ni inclusión local detectados**. Alcance: historia alcanzable mediante refs; no objetos huérfanos inaccesibles.
 
 ## C. Sincronización
 
-`git fetch origin` terminó correctamente. `git branch -vv` y `git status -sb`: única rama local `main`, inicialmente limpia y **ahead 1**. `origin/main` y `origin/HEAD` apuntan a `c8acf5a`. `git log origin/main..HEAD --oneline`: únicamente `2cc3234 feat: python sdk with non-blocking tracking`. Dashboard y seed ya están publicados. Sin ramas locales sobrantes y sin tags (`git tag -n` vacío).
+`git fetch origin` terminó correctamente. `git branch -vv` y `git status -sb`: única rama local `main`, inicialmente limpia y **ahead 1**. `origin/main` y `origin/HEAD` apuntan a `c8acf5a`. `git log origin/main..HEAD --oneline`: únicamente `feat: python sdk with non-blocking tracking`. Dashboard y seed ya están publicados. Sin ramas locales sobrantes y sin tags (`git tag -n` vacío).
 
 El único commit autorizado de esta sesión añadirá un segundo commit local pendiente de push. No se hará push.
 
@@ -246,7 +246,7 @@ Workflow leído completo: `.github/workflows/ci.yml`.
 - Orden correcto: sync frozen, ruff check, ruff format check, pytest con `--cov=app --cov=sdk --cov-fail-under=80`. SDK sí está incluido en HEAD; **origin/main aún no tiene ese cambio del SDK**.
 - El umbral CI se aplica al total combinado, no obliga por separado a cada directorio; ahora ambos superan 80% localmente.
 
-El dueño debe comprobar en GitHub Actions la ejecución del SHA publicado, que se resuelvan las dos acciones, Postgres arranque y pasen instalación/lint/formato/tests/cobertura. Después de autorizar un push futuro, comprobar también el SDK y su SHA exacto; un badge verde de c8acf5a no demuestra que 2cc3234 pasara CI. No se accedió a resultados remotos ni se ejecutó push.
+El dueño debe comprobar en GitHub Actions la ejecución del SHA publicado, que se resuelvan las dos acciones, Postgres arranque y pasen instalación/lint/formato/tests/cobertura. Después de autorizar un push futuro, comprobar también el SDK y su SHA exacto; un badge verde de c8acf5a no demuestra que el commit `feat: python sdk with non-blocking tracking` pasara CI. No se accedió a resultados remotos ni se ejecutó push.
 
 ## Hallazgos por severidad
 
