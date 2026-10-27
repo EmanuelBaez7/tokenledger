@@ -132,6 +132,10 @@ def main() -> None:
                 date_from=start_date,
                 date_to=end_date,
             )
+            has_range_data = bool(feature_items or customer_items)
+            global_events = []
+            if not has_range_data:
+                global_events = fetch_costs(group_by="feature")
     except MissingConfigurationError:
         st.error("Configuración requerida: falta la variable de entorno `API_KEY`.")
         st.info(
@@ -139,29 +143,14 @@ def main() -> None:
             "variables de entorno para continuar."
         )
         st.stop()
-    except UnauthorizedError:
-        st.error("La API rechazó las credenciales. Revisa `API_KEY`.")
-        st.stop()
-    except ApiConnectionError:
-        st.error("No se pudo conectar con la API.")
-        if st.button("Reintentar"):
-            st.rerun()
-        st.stop()
-    except ApiError as exc:
-        st.error(f"Error devuelto por la API: {exc}")
+    except (UnauthorizedError, ApiConnectionError, ApiError) as exc:
+        st.error(str(exc))
         if st.button("Reintentar"):
             st.rerun()
         st.stop()
 
     # Estado sin datos
-    has_range_data = bool(feature_items or customer_items)
     if not has_range_data:
-        # Verificar si hay eventos en general sin filtro de fechas
-        try:
-            global_events = fetch_costs(group_by="feature")
-        except Exception:
-            global_events = []
-
         if not global_events:
             st.info(
                 "Aún no hay eventos. Ejecuta `uv run python -m scripts.seed_demo` "

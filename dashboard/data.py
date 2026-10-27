@@ -1,10 +1,37 @@
 import os
 from dataclasses import dataclass
 from datetime import date
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Any
 
 import httpx
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, field_validator
+
+
+class CostRow(BaseModel):
+    """Validate the API contract before data reaches metrics or charts."""
+
+    model_config = ConfigDict(strict=True)
+
+    key: str
+    total_cost_usd: str
+    total_input_tokens: int = Field(ge=0)
+    total_output_tokens: int = Field(ge=0)
+    calls: int = Field(ge=0)
+
+    @field_validator("total_cost_usd")
+    @classmethod
+    def validate_cost(cls, value: str) -> str:
+        try:
+            cost = Decimal(value)
+        except InvalidOperation as exc:
+            raise ValueError("Invalid cost") from exc
+        if not cost.is_finite() or cost < 0:
+            raise ValueError("Cost must be finite and non-negative")
+        return value
+
+
+_cost_rows = TypeAdapter(list[CostRow])
 
 
 class DashboardError(Exception):
@@ -101,7 +128,11 @@ def fetch_costs(
             f"Error {response.status_code} devuelto por la API al consultar {endpoint}."
         )
 
-    return response.json()
+    try:
+        rows = _cost_rows.validate_python(response.json())
+    except (ValueError, TypeError) as exc:
+        raise ApiError("La API devolvió una respuesta inválida de costos.") from exc
+    return [row.model_dump() for row in rows]
 
 
 def calculate_totals(items: list[dict[str, Any]]) -> DashboardMetrics:

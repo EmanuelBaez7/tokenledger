@@ -182,3 +182,10 @@ Completado después del mini-paso 9.2, según la autorización del dueño. Dos c
 - M7 (YAML) resuelto por `fix: parse seed prices as decimals`.
 - Loader derivado de SafeLoader conserva los escalares decimales como texto antes de construir Decimal, sin modificar el loader global. Los tests comprueban 0.1 y 2.50 exactos, incluida su escala, y los precios oficiales del seed sin float.
 - Reproducción: 2 fallos antes del arreglo. Validación previa al commit: pytest completo (incluida idempotencia del seed), Ruff y formato en verde. La excepción visual del dashboard se documentará en el commit final autorizado.
+
+### Mini-paso 9.3 — Errores visibles del dashboard
+
+- M8 resuelto por `fix: show dashboard errors instead of an empty state`.
+- JSON corrupto, estructura inesperada, tipos incorrectos y costos no finitos generan ApiError (DashboardError), sin trasladar JSONDecodeError/TypeError a la interfaz.
+- Las consultas por feature, customer y global comparten manejo de errores con Reintentar. Solo respuestas correctas y realmente vacías muestran la ayuda del seed.
+- MockTransport y UI simulada reproducen 8 fallos iniciales y comprueban fallos en la segunda y tercera consulta, JSON inválido y ausencia real de eventos. Validación previa al commit: pytest completo, Ruff y formato en verde; sin dependencias nuevas.
