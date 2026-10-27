@@ -44,7 +44,7 @@ Alertas, presupuestos, multi-tenant, login de usuarios, ClickHouse, OpenTelemetr
 | output_per_mtok_usd | numeric(14,6) | precio por millón de tokens de salida |
 | effective_from | date | |
 
-Reglas: dinero siempre con `Decimal`, nunca `float`. Los precios viven en `prices.seed.yaml` y se cargan a la BD; **no se escriben precios reales en el código**. Los valores del seed son de ejemplo y el humano los verifica en las páginas oficiales de cada proveedor.
+Reglas: dinero siempre con `Decimal`, nunca `float`. La única excepción permitida es convertir a `float` solo para dibujar gráficos en el dashboard; cálculos, métricas, tablas y persistencia conservan valores exactos con `Decimal`. Los precios viven en `prices.seed.yaml` y se cargan a la BD; **no se escriben precios reales en el código**. Los valores del seed son de ejemplo y el humano los verifica en las páginas oficiales de cada proveedor.
 
 ## 6. API (prefijo `/v1`)
 Autenticación: header `X-API-Key` comparado con la variable de entorno `API_KEY`. Falta o error → 401.
@@ -64,7 +64,7 @@ resp = tl.track(lambda: client.messages.create(...), provider="anthropic", featu
 - Mide latencia, lee el uso de tokens de la respuesta (Anthropic: `usage.input_tokens/output_tokens`; OpenAI: `usage.prompt_tokens/completion_tokens`) y envía el evento en un hilo aparte.
 - Parámetro opcional `model`: si no se pasa, se extrae de `response.model`. Si falta el modelo o el uso de tokens en la respuesta, se registra un warning y no se envía el evento, sin lanzar excepción.
 - **Si el envío falla, nunca lanza excepción al usuario** (se registra un warning). Siempre devuelve la respuesta original del LLM.
-- Si la llamada al LLM lanza excepción: si se pasó `model`, registra evento `status=error` con tokens 0 y ese modelo; si no se pasó `model`, no hay evento válido y solo se registra un warning. En ambos casos vuelve a lanzar la excepción original sin envolverla.
+- Para registrar eventos de error, el SDK exige pasar `model` explícitamente a `track(...)`. Si la llamada al LLM lanza excepción: si se pasó `model`, registra evento `status=error` con tokens 0 y ese modelo; si no se pasó `model`, no hay evento válido y solo se registra un warning. En ambos casos vuelve a lanzar la excepción original sin envolverla.
 
 ## 8. Arquitectura
 Monolito modular, capas con dependencias en un solo sentido:

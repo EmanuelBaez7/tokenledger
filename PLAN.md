@@ -149,10 +149,10 @@ Usa task-tdd. Implementa solo CI según SPEC.md sección 10.
 **Prompt:**
 ```
 Usa task-tdd. Implementa solo el SDK según SPEC.md sección 7 y RF4.
-- sdk/tokenledger/client.py con la clase TokenLedger(base_url, api_key) y el método track(fn, provider, feature, customer=None).
+- sdk/tokenledger/client.py con la clase TokenLedger(base_url, api_key) y el método track(fn, provider, feature, customer=None, model=None).
 - Mide latencia, extrae tokens de la respuesta (Anthropic: usage.input_tokens/output_tokens; OpenAI: usage.prompt_tokens/completion_tokens), envía el evento en un hilo aparte con httpx y timeout corto.
 - Si el envío falla: warning en logs y NUNCA lanzar excepción al usuario. Siempre devolver la respuesta original.
-- Si fn lanza excepción: registrar evento status=error con tokens 0 y volver a lanzar la excepción original.
+- Si fn lanza excepción: registrar evento status=error con tokens 0 solo si se pasó model explícitamente; sin model, registrar warning sin evento. En ambos casos volver a lanzar la excepción original.
 - Tests unitarios con objetos falsos (sin llamar a ninguna API real) y httpx mockeado: éxito, fallo de red, excepción del LLM, ambos formatos de usage.
 - Un test de integración que envíe un evento real al servidor y lo encuentre en /v1/costs.
 ```
@@ -178,7 +178,7 @@ Usa task-tdd. Implementa solo RF5 según SPEC.md.
 ## Paso 11 — Datos de demostración · 45 min
 **Prompt:**
 ```
-Usa task-tdd. Crea scripts/seed_demo.py que, usando el SDK o la API, genere unos 300 eventos aleatorios realistas en los últimos 14 días: 4 features, 5 customers, 3 modelos, tokens variables, con una función claramente "cara" y un cliente que gasta mucho más, para que el dashboard cuente una historia. Debe poder ejecutarse con un comando documentado en el README.
+Usa task-tdd. Crea scripts/seed_demo.py que escriba directamente en la base mediante los repositorios y CostCalculator: la API rechaza created_at del cliente con 422, por lo que el seed necesita inserción directa para generar históricos. Genera unos 300 eventos aleatorios realistas en los últimos 14 días: 4 features, 5 customers, 4 modelos, tokens variables, con una función claramente "cara" y un cliente que gasta mucho más, para que el dashboard cuente una historia. Comando oficial desde la raíz: uv run python -m scripts.seed_demo; incluirlo en el README en el Paso 13.
 ```
 **Verificación:** ejecuta el script y mira el dashboard.
 **Commit:** `chore: demo data generator`

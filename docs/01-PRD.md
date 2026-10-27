@@ -53,7 +53,7 @@ Alertas y detección de anomalías, presupuestos, multiusuario y login, más de 
 3. **Dado** una API key incorrecta, **cuando** llamo a cualquier endpoint salvo `/health`, **entonces** recibo 401.
 4. **Dado** eventos de 3 features, **cuando** consulto `group_by=feature`, **entonces** la lista viene ordenada por costo descendente y los totales suman el total global.
 5. **Dado** que la API está apagada, **cuando** mi código llama a `track(...)`, **entonces** recibo la respuesta del LLM y no hay excepción.
-6. **Dado** que la llamada al LLM falla, **cuando** uso `track(...)`, **entonces** se registra un evento `status=error` y se relanza la excepción original.
+6. **Dado** que la llamada al LLM falla, **cuando** uso `track(...)` con `model` explícito, **entonces** se registra un evento `status=error` con tokens 0 y se relanza la excepción original. Sin `model`, el SDK registra un warning sin evento y relanza la misma excepción original (SPEC §7).
 7. **Dado** un repo recién clonado, **cuando** ejecuto `docker compose up`, **entonces** `/health` responde ok y el dashboard abre.
 
 ## Preguntas abiertas (decide el dueño)

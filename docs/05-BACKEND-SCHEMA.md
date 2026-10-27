@@ -61,7 +61,7 @@ Sin registro ni sesiones. Cada petición lleva `X-API-Key`; el servidor la compa
 - Si el par `(provider, model)` no tiene precio vigente → error 422 `unknown_model_price`.
 - `group_by` ∈ {feature, customer, model}; `from` ≤ `to`; fechas en formato `YYYY-MM-DD`.
 - Agrupación y fechas: eventos con customer NULL se agrupan bajo la clave 'unassigned' (COALESCE); 'from' es inclusivo desde 00:00 UTC y 'to' cubre el día completo (created_at < to + 1 día).
-- La API ignora cualquier `cost_usd`, `id` o `created_at` que envíe el cliente (los rechaza con 422 si se incluyen, para evitar confusión).
+- La API rechaza con 422 cualquier `cost_usd`, `id` o `created_at` que envíe el cliente.
 
 ## Formato unificado de respuestas de error
 Todas las respuestas de error siguen el esquema único `{"code": "<string>", "message": "<texto>", "details": <opcional>}`:

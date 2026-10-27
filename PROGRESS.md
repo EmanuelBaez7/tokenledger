@@ -17,7 +17,10 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
 | **Paso 7** | Reportes (`GET /v1/costs`) | **Completado** | `ReportService`, endpoint de costos agregados por dimensión, filtros de fechas y validaciones 422/401 unificadas. |
 | **Paso 8** | CI en GitHub Actions | **Completado** | Workflow `.github/workflows/ci.yml` con Postgres 16, uv, ruff y cobertura ≥ 80%. |
 | **Mini-paso 8.1** | Actualización de versiones de GitHub Actions | **Completado** | `actions/checkout@v7` y `astral-sh/setup-uv@v10.3.0` (tag inmutable verificado en releases oficiales). |
-| **Paso 9** | SDK Python (`sdk/tokenledger`) | **Completado** | Envoltorio con `tl.track(...)` sin bloqueo, cola daemon y tolerancia total a fallos. |
+| **Paso 9** | SDK Python (`sdk/tokenledger`) | **Completado** | Envoltorio con `tl.track(...)` sin bloqueo, cola daemon y manejo probado de fallos de envío y datos de uso inválidos; errores del LLM conservan su excepción original. |
+| **Mini-paso 9.1** | Robustez y privacidad del SDK | **Completado** | A1 y A2 resueltos; warnings redactados y validación de usage. Ejecutado después de 9.2. |
+| **Mini-paso 9.2** | Robustez de la API pública | **Completado** | M3, M2 y M4 resueltos; autenticación UTF-8, errores JSON y límites numéricos/fechas. |
+| **Mini-paso 9.3** | Seed, dashboard, fixtures y coherencia documental | **Completado** | M1, B6, M7, M8, M9 y B3 (estado documental) resueltos en cinco commits; pasos 12–14 pendientes. |
 | **Paso 10** | Dashboard en Streamlit | **Completado** | Pantalla única con métricas, gráficos horizontales con acento, tablas y estados de error/vacío. |
 | **Paso 11** | Seed de datos de demostración | **Completado** | ~300 eventos sintéticos reproducibles; `traduccion` top feature, `globex` top customer. |
 | **Paso 12** | Despliegue en la nube | Pendiente | Despliegue público con base gestionada. |
@@ -37,7 +40,7 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
 
 ### Paso 2 — Docker Compose, Postgres y configuración
 - `Settings` con `pydantic-settings` para `DATABASE_URL` y `API_KEY`.
-- `docker-compose.yml` con servicios `api` y `db` (Postgres 16 con healthcheck).
+- `docker-compose.yml` con servicios `api`, `db` (Postgres 16 con healthcheck) y `dashboard` (añadido en el Paso 10).
 
 ### Paso 3 — Modelos de base de datos y migración
 - Modelos SQLAlchemy 2: `Event` y `Price` con tipos precisos (`UUID`, `Numeric(14,8)`, `Numeric(14,6)`), índices compuestos y restricciones CHECK.
@@ -123,10 +126,11 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
 
 
 ## Pendientes y avisos
-- [ ] Crear el repo remoto en GitHub, hacer push y comprobar que el workflow queda en verde.
+- [x] Repo remoto creado en GitHub y proyecto subido; las correcciones locales de esta sesión quedan sin push por instrucción del dueño.
+- [ ] Comprobar que el workflow remoto queda en verde para la revisión publicada; la validación local no certifica CI remota.
 - [ ] El SDK se importa como sdk.tokenledger; empaquetarlo como paquete instalable queda para la v0.2.
 - [x] **Formato de errores unificado (Resuelto en Mini-paso 6.1):** Formato único consistente `{"code", "message", "details"}` documentado e implementado para 401, 422 (modelo y validación Pydantic) y HTTP general.
-- En este equipo Windows reserva los puertos 7918-8217; para correr uvicorn en local usa `--port 8500. Los tests no se ven afectados.
+- En este equipo Windows reserva los puertos 7918-8217; para correr uvicorn en local usa `--port 8500`. Los tests no se ven afectados.
 
 ## Traspaso a Codex — 2026-10-27
 
@@ -196,3 +200,22 @@ Completado después del mini-paso 9.2, según la autorización del dueño. Dos c
 - Función pura en tests/database_safety.py exige nombre terminado en _test y host localhost, 127.0.0.1 o db. Rechaza overrides del destino en parámetros de conexión y no imprime credenciales.
 - Setup valida antes de conectar/migrar; db_session comprueba la URL real del engine antes de TRUNCATE. No existen DROP de fixtures. La URL administrativa conserva host, puerto y credenciales de TEST_DATABASE_URL, cambiando solo la base a postgres; creación/consulta usan el nombre validado y un identificador escapado.
 - Tests primero; 13 casos comprueban política pura, conexión administrativa derivada y rechazo previo a cualquier conexión. Validación previa al commit: pytest completo, Ruff y formato en verde.
+
+### Mini-paso 9.3 — Cierre documental
+
+- B3 (coherencia y estado documental) resuelto por `docs: align project docs with the current state`.
+- AGENTS/CLAUDE: commits solo por petición explícita, convencionales; nunca push, amend, reset ni force. SPEC y CLAUDE permiten float únicamente al dibujar gráficos del dashboard; métricas/tablas/cálculos/persistencia mantienen Decimal.
+- SPEC/PLAN/PRD exigen model explícito para registrar errores del LLM. PLAN refleja los cuatro modelos del seed y su escritura directa mediante repositorios, por el rechazo de created_at en la API. Schema documenta rechazo 422 de campos prohibidos.
+- Resumen actual: remoto existente y proyecto subido; Compose incluye api, db y dashboard; mini-pasos 9.1, 9.2 y 9.3 completados. Pasos 12–14, aceptación pública y CI remota pendientes; no se certifican con tests locales.
+
+| Hallazgo resuelto | Mensaje exacto del commit |
+|---|---|
+| M1, B6 | `fix: make demo seed runnable as a module` |
+| M7, YAML sin float | `fix: parse seed prices as decimals` |
+| M8 | `fix: show dashboard errors instead of an empty state` |
+| M9 | `test: guard destructive fixtures against non-test databases` |
+| B3, coherencia documental; excepción visual de M7 | `docs: align project docs with the current state` |
+
+- Sin dependencias añadidas ni cambios de esquema; no se avanzó al Paso 12 ni se hizo push, amend, reset o force.
+
+Validación final de 9.3: **243 tests aprobados**, cobertura app+sdk **95.38%** (umbral 80% superado), Ruff y formato limpios (**63 archivos**). Persiste un warning conocido de Starlette/httpx; no se cambian dependencias para silenciarlo.

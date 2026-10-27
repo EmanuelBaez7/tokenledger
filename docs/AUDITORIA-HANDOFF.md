@@ -6,6 +6,8 @@ Fecha: **2026-10-27**. Revisión de `main` en el commit `feat: python sdk with n
 
 **Actualización del mini-paso 9.1:** A1 y A2 también están resueltos; ver el cierre del SDK añadido después del 9.2, según el orden de autorización del dueño.
 
+**Actualización del mini-paso 9.3:** M1, B6, M7, M8, M9 y B3 (coherencia y estado documental) resueltos. Los pasos 12–14 y su aceptación siguen pendientes. La evidencia inicial se conserva como histórica; los cierres al final describen el estado actual.
+
 ## Alcance y conclusión
 
 Se leyeron, en orden, `CLAUDE.md`, `SPEC.md`, `PROGRESS.md`, `PLAN.md` y los seis documentos de `docs/`. Auditoría de código, tests, migraciones, configuración, historia alcanzable y documentación. No se corrigieron hallazgos ni se modificaron código, tests o workflows. Únicos cambios previstos: `AGENTS.md`, este informe y una entrada añadida a `PROGRESS.md`.
@@ -382,3 +384,20 @@ Verificación completa: **211 tests aprobados**, un warning conocido de Starlett
 - Función pura en tests/database_safety.py exige nombre terminado en _test y host localhost, 127.0.0.1 o db. Rechaza overrides del destino en parámetros de conexión y no imprime credenciales.
 - Setup valida antes de conectar/migrar; db_session comprueba la URL real del engine antes de TRUNCATE. No existen DROP de fixtures. La URL administrativa conserva host, puerto y credenciales de TEST_DATABASE_URL, cambiando solo la base a postgres; creación/consulta usan el nombre validado y un identificador escapado.
 - Tests primero; 13 casos comprueban política pura, conexión administrativa derivada y rechazo previo a cualquier conexión. Validación previa al commit: pytest completo, Ruff y formato en verde.
+
+## Resolución del mini-paso 9.3 — Cierre documental
+
+Cinco commits autorizados en el orden solicitado, identificados por mensaje exacto y sin hashes. Las pruebas de regresión se escribieron antes de los cambios funcionales; cada commit pasó la suite completa, Ruff y formato, con staging revisado sin .env, .venv ni __pycache__.
+
+| Hallazgo | Estado actual | Commit y alcance |
+|---|---|---|
+| M1 | **Resuelto** | `fix: make demo seed runnable as a module`: comando oficial uv run python -m scripts.seed_demo; subproceso sintético llega al rechazo del host sin ModuleNotFoundError |
+| B6 | **Resuelto** | `fix: make demo seed runnable as a module`: resumen de líderes por costo exacto insertado y, por separado, por llamadas; test con líderes diferentes |
+| M7 | **Resuelto** | `fix: parse seed prices as decimals`: YAML leído como texto antes de Decimal, 0.1 y 2.50 exactos; idempotencia conservada. `docs: align project docs with the current state` documenta la única excepción: conversión a float solo para dibujar gráficos del dashboard |
+| M8 | **Resuelto** | `fix: show dashboard errors instead of an empty state`: JSON/forma/tipos/costos validados, ApiError tipado y Reintentar ante fallos de API, incluidas la segunda consulta y la consulta global; ayuda del seed solo para ausencia real de datos |
+| M9 | **Resuelto** | `test: guard destructive fixtures against non-test databases`: política pura de nombre/host, validación antes de conectar y truncar, URL administrativa derivada de TEST_DATABASE_URL |
+| B3 | **Resuelto en el alcance documental de 9.3** | `docs: align project docs with the current state`: reglas de commits, Decimal/gráficos, model obligatorio para evento error, inserción directa del seed, rechazo 422 y estado de remoto/Compose/mini-pasos alineados |
+
+B3 no certifica los artefactos de lanzamiento: README completo, DECISIONS, DEPLOY, despliegue, CI remota, validación visual pública y tag siguen sujetos a los pasos 12–14. Los demás hallazgos fuera de 9.3 permanecen abiertos. No se añadieron dependencias ni se hizo push, amend, reset o force.
+
+Validación final de 9.3: **243 tests aprobados**, cobertura app+sdk **95.38%** (umbral 80% superado), Ruff y formato limpios (**63 archivos**). Persiste un warning conocido de Starlette/httpx; no se cambian dependencias para silenciarlo.

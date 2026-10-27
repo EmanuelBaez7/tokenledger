@@ -13,9 +13,10 @@ Para el detalle consulta `docs/` (PRD, TRD, App Flow, UI/UX, Schema, Implementat
 
 ## Convenciones
 - Código, nombres, comentarios y commits en **inglés**. Explicaciones al usuario en **español**.
-- Tipado en todo el código (`type hints`). Dinero con `Decimal`, nunca `float`.
+- Tipado en todo el código (`type hints`). Dinero con `Decimal`; única excepción: conversión a `float` solo para dibujar gráficos en el dashboard (SPEC §5).
 - Capas: `api → services → repositories → db`. Prohibido SQL fuera de `repositories/`. Prohibida lógica de negocio en `api/`.
-- Commits convencionales: `feat:`, `fix:`, `test:`, `chore:`, `docs:`.
+- El agente hace commit únicamente cuando el prompt lo pide de forma explícita. Commits convencionales: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`, `ci:`.
+- Nunca ejecutes push, amend, reset ni force.
 - Nunca escribir secretos en el código. Todo por variables de entorno.
 - Privacidad: en documentos, informes y mensajes de commit no incluyas rutas absolutas del equipo, nombres de usuario de Windows, correos personales ni zonas horarias; usa rutas relativas al repositorio.
 
@@ -35,5 +36,5 @@ Para el detalle consulta `docs/` (PRD, TRD, App Flow, UI/UX, Schema, Implementat
 ## Flujo de sesión
 - Un paso de PLAN.md por sesión. No avances al siguiente sin que el humano verifique.
 - Al empezar: lee CLAUDE.md, SPEC.md y PROGRESS.md; revisa git log y git status.
-- Al terminar: actualiza PROGRESS.md (paso hecho, decisiones tomadas, pendientes) y no hagas commit; lo hace el humano.
+- Al terminar: actualiza PROGRESS.md (paso hecho, decisiones tomadas, pendientes). Haz commit solo si el prompt lo pidió explícitamente.
 - Toda decisión importante se escribe en un archivo del repo (docs/ o DECISIONS.md), nunca solo en el chat.
