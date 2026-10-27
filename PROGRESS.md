@@ -128,3 +128,11 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
 - [x] **Formato de errores unificado (Resuelto en Mini-paso 6.1):** Formato único consistente `{"code", "message", "details"}` documentado e implementado para 401, 422 (modelo y validación Pydantic) y HTTP general.
 - En este equipo Windows reserva los puertos 7918-8217; para correr uvicorn en local usa `--port 8500. Los tests no se ven afectados.
 
+## Traspaso a Codex — 2026-10-27
+
+- Auditoría de solo lectura de código, tests, workflows e historia, documentada en [AUDITORIA-HANDOFF.md](docs/AUDITORIA-HANDOFF.md). Se añade `AGENTS.md` como guía breve de entrada.
+- Estado comprobado: pasos 0–11 con implementación y reservas en el informe; último commit funcional `2cc3234` (Paso 9, SDK). Paso 12 sin evidencia de inicio; pasos 13–14 pendientes.
+- `git fetch origin` confirmó `origin/main` en `c8acf5a`; solo el SDK estaba sin push antes de esta entrega. Identidad de los 11 commits comprobada, sin excepciones.
+- Verificación: 139 tests aprobados, 1 warning de Starlette/httpx; cobertura total app+sdk 94.37% (app 96.96%, sdk 85.48%); Ruff y formato limpios. Base de tests migrada sin diferencias respecto de los modelos.
+- No se corrigieron hallazgos ni se avanzó de paso. Esta sesión autoriza únicamente el commit documental de traspaso; cualquier arreglo y continuación requieren aprobación del dueño. No se hizo push.
+
