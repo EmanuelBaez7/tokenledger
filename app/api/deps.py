@@ -18,7 +18,9 @@ def verify_api_key(
     settings: Annotated[Settings, Depends(get_settings)] = None,  # type: ignore[assignment]
 ) -> str:
     """Validate X-API-Key header against settings.API_KEY."""
-    if not x_api_key or not hmac.compare_digest(x_api_key, settings.API_KEY):
+    if not x_api_key or not hmac.compare_digest(
+        x_api_key.encode("utf-8"), settings.API_KEY.encode("utf-8")
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={

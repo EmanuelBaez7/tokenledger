@@ -48,6 +48,7 @@ Reglas: dinero siempre con `Decimal`, nunca `float`. Los precios viven en `price
 
 ## 6. API (prefijo `/v1`)
 Autenticación: header `X-API-Key` comparado con la variable de entorno `API_KEY`. Falta o error → 401.
+La comparación usa bytes UTF-8 en ambos lados con `hmac.compare_digest`. `API_KEY` no puede estar vacía; no se exige longitud mínima adicional en desarrollo. En producción debe ser larga y aleatoria.
 
 - `POST /v1/events` → 201 con el evento y su `cost_usd`. Modelo sin precio → 422 con mensaje claro. Tokens negativos → 422.
 - `GET /v1/costs?group_by=feature|customer|model&from=YYYY-MM-DD&to=YYYY-MM-DD` → lista de `{key, total_cost_usd, total_input_tokens, total_output_tokens, calls}` ordenada por costo descendente. `group_by` inválido → 422.

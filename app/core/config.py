@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,7 +14,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = (
         "postgresql+psycopg://postgres:postgres@127.0.0.1:5432/tokenledger"
     )
-    API_KEY: str
+    API_KEY: str = Field(min_length=1)
 
     @property
     def database_url(self) -> str:

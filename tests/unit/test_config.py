@@ -21,3 +21,9 @@ def test_settings_succeeds_with_api_key(
     settings = Settings(API_KEY="test-api-key", _env_file=None)
     assert settings.API_KEY == "test-api-key"
     assert "postgresql" in settings.DATABASE_URL
+
+
+def test_settings_rejects_empty_api_key() -> None:
+    with pytest.raises(ValidationError) as exc_info:
+        Settings(API_KEY="", _env_file=None)
+    assert exc_info.value.errors()[0]["loc"] == ("API_KEY",)
