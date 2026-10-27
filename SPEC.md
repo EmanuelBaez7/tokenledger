@@ -97,6 +97,7 @@ Python 3.12, uv, FastAPI, Pydantic v2, pydantic-settings, SQLAlchemy 2, Alembic,
 - `ruff check` y `ruff format --check` limpios.
 - Secretos solo por variables de entorno; `.env.example` sin valores reales.
 - Respuestas de error en JSON consistente con formato único: `{"code": "<string>", "message": "<texto>", "details": <opcional>}` (401: `unauthorized`, 422 modelo: `unknown_model_price` con modelo en details, 422 validación: `validation_error` con lista `{field, message}` sin datos sensibles).
+- Excepciones inesperadas: 500 con `{"code": "internal_error", "message": "Internal server error"}`, sin detalles internos; la excepción se registra en el servidor sin incluir headers ni cuerpo de la petición.
 
 ## 11. Criterios de aceptación (v0.1 terminada)
 1. `docker compose up` y luego `curl /health` devuelve ok.

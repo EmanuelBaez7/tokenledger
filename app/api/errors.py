@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 from fastapi import FastAPI, Request, status
@@ -6,6 +7,8 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.services.cost_calculator import UnknownModelPriceError
+
+logger = logging.getLogger(__name__)
 
 
 def format_error_payload(
@@ -93,8 +96,24 @@ async def validation_exception_handler(
     )
 
 
+async def unexpected_exception_handler(
+    request: Request, exc: Exception
+) -> JSONResponse:
+    """Log the exception without request data and return a safe error response."""
+    logger.error(
+        "Unhandled server exception", exc_info=(type(exc), exc, exc.__traceback__)
+    )
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content=format_error_payload(
+            code="internal_error", message="Internal server error"
+        ),
+    )
+
+
 def register_error_handlers(app: FastAPI) -> None:
     """Register all unified exception handlers on the FastAPI application."""
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
     app.add_exception_handler(UnknownModelPriceError, unknown_model_price_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
+    app.add_exception_handler(Exception, unexpected_exception_handler)
