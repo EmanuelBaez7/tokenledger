@@ -100,6 +100,11 @@ class TokenLedger:
         )
         self._worker.start()
 
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(api_key=***)"
+
+    __str__ = __repr__
+
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
@@ -217,6 +222,18 @@ class TokenLedger:
     # Internal helpers
     # ------------------------------------------------------------------
 
+    def _warn_exception(self, message: str, exc: Exception) -> None:
+        """Log only the exception type and a redacted message, never a traceback."""
+        try:
+            detail = str(exc)
+            if self._api_key:
+                detail = detail.replace(self._api_key, "***")
+        except Exception:  # noqa: BLE001
+            detail = "Exception message unavailable"
+        _get_logger().warning(
+            "tokenledger: %s (%s): %s", message, type(exc).__name__, detail
+        )
+
     def _enqueue(self, payload: dict[str, Any]) -> None:
         """Put payload on the queue; drop with a warning if the queue is full."""
         try:
@@ -240,11 +257,8 @@ class TokenLedger:
                     # Sentinel — shut down
                     break
                 self._post_event(item)
-            except Exception:  # noqa: BLE001
-                _get_logger().warning(
-                    "tokenledger: unexpected error in worker thread",
-                    exc_info=True,
-                )
+            except Exception as exc:  # noqa: BLE001
+                self._warn_exception("unexpected error in worker thread", exc)
             finally:
                 self._queue.task_done()
 
@@ -253,7 +267,6 @@ class TokenLedger:
         clean_payload = {k: v for k, v in payload.items() if v is not None}
         kwargs: dict[str, Any] = {
             "json": clean_payload,
-            "headers": {"X-API-Key": self._api_key},
         }
         if not type(self._http_client).__name__.endswith("TestClient"):
             kwargs["timeout"] = self._timeout
@@ -261,24 +274,15 @@ class TokenLedger:
         try:
             response = self._http_client.post(
                 f"{self._base_url}/v1/events",
+                headers={"X-API-Key": self._api_key},
                 **kwargs,
             )
             if response.status_code not in (200, 201):
                 _get_logger().warning(
-                    "tokenledger: server returned %d for event (provider=%s model=%s)",
+                    "tokenledger: server returned %d for event",
                     response.status_code,
-                    payload.get("provider"),
-                    payload.get("model"),
                 )
         except httpx.HTTPError as exc:
-            _get_logger().warning(
-                "tokenledger: HTTP error posting event (provider=%s model=%s): %s",
-                payload.get("provider"),
-                payload.get("model"),
-                type(exc).__name__,
-            )
-        except Exception:  # noqa: BLE001
-            _get_logger().warning(
-                "tokenledger: unexpected error posting event",
-                exc_info=True,
-            )
+            self._warn_exception("HTTP error posting event", exc)
+        except Exception as exc:  # noqa: BLE001
+            self._warn_exception("unexpected error posting event", exc)
