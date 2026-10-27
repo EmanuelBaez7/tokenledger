@@ -375,3 +375,10 @@ Verificación completa: **211 tests aprobados**, un warning conocido de Starlett
 - JSON corrupto, estructura inesperada, tipos incorrectos y costos no finitos generan ApiError (DashboardError), sin trasladar JSONDecodeError/TypeError a la interfaz.
 - Las consultas por feature, customer y global comparten manejo de errores con Reintentar. Solo respuestas correctas y realmente vacías muestran la ayuda del seed.
 - MockTransport y UI simulada reproducen 8 fallos iniciales y comprueban fallos en la segunda y tercera consulta, JSON inválido y ausencia real de eventos. Validación previa al commit: pytest completo, Ruff y formato en verde; sin dependencias nuevas.
+
+### Mini-paso 9.3 — Fixtures destructivas protegidas
+
+- M9 resuelto por `test: guard destructive fixtures against non-test databases`.
+- Función pura en tests/database_safety.py exige nombre terminado en _test y host localhost, 127.0.0.1 o db. Rechaza overrides del destino en parámetros de conexión y no imprime credenciales.
+- Setup valida antes de conectar/migrar; db_session comprueba la URL real del engine antes de TRUNCATE. No existen DROP de fixtures. La URL administrativa conserva host, puerto y credenciales de TEST_DATABASE_URL, cambiando solo la base a postgres; creación/consulta usan el nombre validado y un identificador escapado.
+- Tests primero; 13 casos comprueban política pura, conexión administrativa derivada y rechazo previo a cualquier conexión. Validación previa al commit: pytest completo, Ruff y formato en verde.
