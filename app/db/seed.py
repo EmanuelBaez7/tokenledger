@@ -13,6 +13,15 @@ from app.db.session import SessionLocal
 DEFAULT_SEED_FILE = Path(__file__).resolve().parents[2] / "prices.seed.yaml"
 
 
+class PriceSeedLoader(yaml.SafeLoader):
+    """Keep YAML decimal scalars as text until Decimal construction."""
+
+
+PriceSeedLoader.add_constructor(
+    "tag:yaml.org,2002:float", PriceSeedLoader.construct_scalar
+)
+
+
 def load_seed_prices(yaml_path: Path | str = DEFAULT_SEED_FILE) -> list[dict[str, Any]]:
     """Load and parse the seed YAML file."""
     path = Path(yaml_path)
@@ -20,7 +29,7 @@ def load_seed_prices(yaml_path: Path | str = DEFAULT_SEED_FILE) -> list[dict[str
         raise FileNotFoundError(f"Seed file not found: {path}")
 
     with path.open("r", encoding="utf-8") as f:
-        data = yaml.safe_load(f)
+        data = yaml.load(f, Loader=PriceSeedLoader)
 
     if not isinstance(data, list):
         raise ValueError("Seed YAML must contain a list of price entries")

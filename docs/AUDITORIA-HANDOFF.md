@@ -362,3 +362,9 @@ Verificación completa: **211 tests aprobados**, un warning conocido de Starlett
 - Comando oficial desde la raíz: `uv run python -m scripts.seed_demo`.
 - Regresión: subproceso con configuración sintética rechaza el host remoto sin ModuleNotFoundError; resumen con líderes distintos por costo y por llamadas, usando solo los costos insertados en esta ejecución.
 - La reproducción inicial dio 2 fallos y 1 control aprobado. Validación previa al commit: pytest completo, Ruff y formato en verde. Los demás arreglos de 9.3 continúan pendientes.
+
+### Mini-paso 9.3 — Precios YAML exactos
+
+- M7 (YAML) resuelto por `fix: parse seed prices as decimals`.
+- Loader derivado de SafeLoader conserva los escalares decimales como texto antes de construir Decimal, sin modificar el loader global. Los tests comprueban 0.1 y 2.50 exactos, incluida su escala, y los precios oficiales del seed sin float.
+- Reproducción: 2 fallos antes del arreglo. Validación previa al commit: pytest completo (incluida idempotencia del seed), Ruff y formato en verde. La excepción visual del dashboard se documentará en el commit final autorizado.
