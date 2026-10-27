@@ -85,3 +85,27 @@ def test_event_service_raises_unknown_model_price_error_when_no_price() -> None:
     assert exc_info.value.model == "unknown-model"
     assert exc_info.value.provider == "anthropic"
     mock_event_repo.add.assert_not_called()
+
+
+@pytest.mark.parametrize("cost", [Decimal("999999.99999999"), Decimal("1000000")])
+def test_event_service_checks_cost_before_persistence(cost: Decimal) -> None:
+    event_repo = MagicMock()
+    event_repo.add.side_effect = lambda event: event
+    calculator = MagicMock(spec=CostCalculator)
+    calculator.calculate.return_value = cost
+    service = EventService(event_repo, MagicMock(), calculator)
+    arguments = {
+        "provider": "anthropic",
+        "model": "bounds-model",
+        "input_tokens": 1,
+        "output_tokens": 1,
+        "feature": "bounds",
+    }
+    if cost == Decimal("1000000"):
+        with pytest.raises(ValueError, match="Calculated cost"):
+            service.create_event(**arguments)
+        event_repo.add.assert_not_called()
+        event_repo.session.commit.assert_not_called()
+    else:
+        assert service.create_event(**arguments).cost_usd == cost
+        event_repo.add.assert_called_once()

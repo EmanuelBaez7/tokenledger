@@ -136,3 +136,18 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
 - Verificación: 139 tests aprobados, 1 warning de Starlette/httpx; cobertura total app+sdk 94.37% (app 96.96%, sdk 85.48%); Ruff y formato limpios. Base de tests migrada sin diferencias respecto de los modelos.
 - No se corrigieron hallazgos ni se avanzó de paso. Esta sesión autoriza únicamente el commit documental de traspaso; cualquier arreglo y continuación requieren aprobación del dueño. No se hizo push.
 
+## Mini-paso 9.2 — Robustez de la API pública — 2026-10-27
+
+Completado con autorización del dueño, preservando el historial anterior. Tres arreglos separados, test-first, identificados por mensaje exacto de commit, sin hashes:
+
+| Hallazgo resuelto | Commit | Cambio |
+|---|---|---|
+| M3 | `fix: return 401 for non-ascii api keys` | Comparación constante de bytes UTF-8; clave no ASCII incorrecta → 401; Settings rechaza vacío y conserva claves cortas en desarrollo. SPEC recomienda clave larga y aleatoria en producción |
+| M2 | `fix: return json for unexpected server errors` | Exception → 500 JSON internal_error con mensaje genérico, sin detalles internos; log de excepción sin agregar headers/cuerpo de la petición |
+| M4 | `fix: validate numeric and date bounds` | Tokens ≤2147483647; desborde de numeric(14,8) → 422 cost_out_of_range antes de persistir; fechas from/to entre 2000-01-01 y 2100-12-31 inclusive |
+
+- Ciclos test-first: M3 reprodujo 3 fallos y cerró con 143 tests; M2 reprodujo 1 fallo y cerró con 144; M4 reprodujo 10 fallos y cerró con 161. Ruff y formato comprobados antes de cada commit.
+- Cobertura completa app+sdk: **94.57%**, con **161 tests aprobados** y un warning conocido de Starlette/httpx. No se añadieron dependencias ni migraciones.
+- Comprobación manual con Invoke-RestMethod sobre la API actual en **8500**: input_tokens=2147483648 devuelve **422 validation_error** con detalle del campo, sin exponer la clave ni guardar el evento. La API local queda corriendo.
+- [Informe actualizado](docs/AUDITORIA-HANDOFF.md): M2, M3 y M4 resueltos; los demás hallazgos y los pasos 12–14 siguen pendientes. No se hizo push, amend, reset ni force.
+

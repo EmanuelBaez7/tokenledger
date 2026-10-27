@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.services.cost_calculator import UnknownModelPriceError
+from app.services.events import CostOutOfRangeError
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +66,16 @@ async def unknown_model_price_handler(
     )
 
 
+async def cost_out_of_range_handler(
+    request: Request, exc: CostOutOfRangeError
+) -> JSONResponse:
+    """Translate event cost overflow to a domain validation response."""
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        content=format_error_payload(code="cost_out_of_range", message=str(exc)),
+    )
+
+
 async def validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
@@ -115,5 +126,6 @@ def register_error_handlers(app: FastAPI) -> None:
     """Register all unified exception handlers on the FastAPI application."""
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
     app.add_exception_handler(UnknownModelPriceError, unknown_model_price_handler)
+    app.add_exception_handler(CostOutOfRangeError, cost_out_of_range_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(Exception, unexpected_exception_handler)

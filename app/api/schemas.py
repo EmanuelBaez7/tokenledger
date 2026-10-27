@@ -11,8 +11,8 @@ class EventCreate(BaseModel):
 
     provider: Literal["anthropic", "openai"]
     model: str = Field(min_length=1, max_length=128)
-    input_tokens: int = Field(ge=0)
-    output_tokens: int = Field(ge=0)
+    input_tokens: int = Field(ge=0, le=2147483647)
+    output_tokens: int = Field(ge=0, le=2147483647)
     latency_ms: int | None = Field(default=None, ge=0)
     feature: str = Field(min_length=1, max_length=64)
     customer: str | None = Field(default=None, max_length=128)

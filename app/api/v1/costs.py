@@ -9,6 +9,8 @@ from app.api.schemas import CostReportItem
 from app.services.reports import InvalidDateRangeError, ReportService
 
 router = APIRouter(prefix="/costs", tags=["costs"])
+MIN_REPORT_DATE = date(2000, 1, 1)
+MAX_REPORT_DATE = date(2100, 12, 31)
 
 
 @router.get(
@@ -19,8 +21,12 @@ def get_costs(
     service: Annotated[ReportService, Depends(get_report_service)],
     _: Annotated[str, Depends(verify_api_key)],
     group_by: Annotated[Literal["feature", "customer", "model"], Query()],
-    date_from: Annotated[date | None, Query(alias="from")] = None,
-    date_to: Annotated[date | None, Query(alias="to")] = None,
+    date_from: Annotated[
+        date | None, Query(alias="from", ge=MIN_REPORT_DATE, le=MAX_REPORT_DATE)
+    ] = None,
+    date_to: Annotated[
+        date | None, Query(alias="to", ge=MIN_REPORT_DATE, le=MAX_REPORT_DATE)
+    ] = None,
 ) -> list[CostReportItem]:
     """Retrieve aggregated costs grouped by dimension with optional date range."""
     try:

@@ -2,6 +2,8 @@
 
 Fecha: **2026-10-27**. Revisión de `main` en `2cc3234`, antes del commit documental de este informe.
 
+**Actualización del mini-paso 9.2:** M3, M2 y M4 están resueltos. La evidencia original se conserva como fotografía de la auditoría inicial; el cierre añadido al final registra las correcciones y su validación actual.
+
 ## Alcance y conclusión
 
 Se leyeron, en orden, `CLAUDE.md`, `SPEC.md`, `PROGRESS.md`, `PLAN.md` y los seis documentos de `docs/`. Auditoría de código, tests, migraciones, configuración, historia alcanzable y documentación. No se corrigieron hallazgos ni se modificaron código, tests o workflows. Únicos cambios previstos: `AGENTS.md`, este informe y una entrada añadida a `PROGRESS.md`.
@@ -322,3 +324,19 @@ Estas sondas diagnostican casos omitidos por los tests actuales; no se añadiero
 El cierre ejecutó de nuevo `uv run pytest -q` (**139 passed, 1 warning**, 13.74 s), `uv run ruff check .` (**All checks passed!**) y `uv run ruff format --check .` (**53 files already formatted**). Se conservó PGCONNECT_TIMEOUT=2 solo en el proceso de validación para acotar la conexión. Solo se preparan los tres documentos autorizados; se verifica que `.env`, `.venv` y `__pycache__` no entren al índice. Único commit: `docs: add agents guide and handoff audit`. Una comparación con `git show HEAD:PROGRESS.md` confirmó que la nota conserva íntegro el contenido anterior, normalizando únicamente finales de línea para la comprobación.
 
 No se hizo push, amend, reset, force, tag, despliegue, corrección funcional ni avance al Paso 12. Quedan pendientes aprobación del dueño para arreglar hallazgos, comprobación de CI remota, validación visual y lanzamiento. Este informe no toma un badge, tests locales o un contenedor antiguo como prueba de despliegue del código actual.
+
+## Resolución del mini-paso 9.2 — 2026-10-27
+
+Tres arreglos autorizados, test-first y en el orden M3 → M2 → M4. Se identifican por sus mensajes exactos de commit, sin hashes, según la instrucción del dueño.
+
+| Hallazgo | Estado | Commit | Evidencia de regresión y corrección |
+|---|---|---|---|
+| M3 | **Resuelto** | `fix: return 401 for non-ascii api keys` | tests/unit/test_api_auth.py reprodujo dos respuestas 500; test_config.py reprodujo la clave vacía aceptada. Comparación UTF-8 en bytes y Settings no vacío; clave corta correcta conserva 200. Suite previa al commit: 143 passed; Ruff y formato limpios |
+| M2 | **Resuelto** | `fix: return json for unexpected server errors` | tests/unit/test_api_errors.py falló por content-type text/plain. Handler general devuelve exactamente 500 application/json con internal_error y mensaje seguro; registra excepción sin agregar headers/cuerpo. Suite previa al commit: 144 passed; Ruff y formato limpios |
+| M4 | **Resuelto** | `fix: validate numeric and date bounds` | tests/integration/test_api_bounds.py y test_event_service.py reprodujeron 10 fallos. Ahora ambos tokens aceptan 2147483647 y rechazan 2147483648; costo máximo 999999.99999999 USD, desborde 422 cost_out_of_range antes de add/commit; from/to limitados inclusivamente a 2000-01-01…2100-12-31, incluido rechazo de 9999-12-31 |
+
+Verificación completa: **161 tests aprobados**, un warning conocido de Starlette/httpx; cobertura app+sdk **94.57%**, por encima del 80%. Ninguna dependencia añadida ni migración necesaria: se ajustaron validaciones y traducción de errores, no el esquema SQL.
+
+Prueba manual sobre el código actualizado con uvicorn en `127.0.0.1:8500`: `Invoke-RestMethod` usando la clave configurada cargada en memoria, sin imprimirla, y el payload del dueño con input_tokens=2147483648 devolvió **422**, `code=validation_error`, `message=Request validation failed`, `details=[{field: input_tokens, message: Input should be less than or equal to 2147483647}]`. No se guardó ese evento.
+
+Los demás hallazgos permanecen pendientes. No se hizo push, amend, reset, force ni se avanzó al Paso 12. La API local de comprobación queda corriendo en el puerto 8500.

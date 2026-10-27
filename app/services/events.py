@@ -1,9 +1,21 @@
 from datetime import UTC, datetime
+from decimal import Decimal
 
 from app.db.models import Event
 from app.repositories.events import EventRepository
 from app.repositories.prices import PriceRepository
 from app.services.cost_calculator import CostCalculator, UnknownModelPriceError
+
+MAX_EVENT_COST_USD = Decimal("999999.99999999")
+
+
+class CostOutOfRangeError(ValueError):
+    """Raised when a calculated event cost exceeds the storage range."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            f"Calculated cost must be between 0 and {MAX_EVENT_COST_USD} USD"
+        )
 
 
 class EventService:
@@ -47,6 +59,8 @@ class EventService:
             output_tokens=output_tokens,
             price=price,
         )
+        if not Decimal("0") <= cost_usd <= MAX_EVENT_COST_USD:
+            raise CostOutOfRangeError()
 
         event = Event(
             provider=provider,

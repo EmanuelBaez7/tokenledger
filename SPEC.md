@@ -27,8 +27,8 @@ Alertas, presupuestos, multi-tenant, login de usuarios, ClickHouse, OpenTelemetr
 | created_at | timestamptz | UTC, default now |
 | provider | text | `anthropic` \| `openai` |
 | model | text | ej. nombre del modelo tal como lo devuelve la API |
-| input_tokens | int ≥ 0 | |
-| output_tokens | int ≥ 0 | |
+| input_tokens | int entre 0 y 2147483647 | |
+| output_tokens | int entre 0 y 2147483647 | |
 | cost_usd | numeric(14,8) | calculado en servidor, nunca enviado por el cliente |
 | latency_ms | int ≥ 0 | opcional |
 | feature | text | requerido, índice |
@@ -51,7 +51,9 @@ Autenticación: header `X-API-Key` comparado con la variable de entorno `API_KEY
 La comparación usa bytes UTF-8 en ambos lados con `hmac.compare_digest`. `API_KEY` no puede estar vacía; no se exige longitud mínima adicional en desarrollo. En producción debe ser larga y aleatoria.
 
 - `POST /v1/events` → 201 con el evento y su `cost_usd`. Modelo sin precio → 422 con mensaje claro. Tokens negativos → 422.
+- Tokens de entrada/salida superiores a 2147483647 → 422 `validation_error`. Costo calculado fuera de 0 a 999999.99999999 USD (`numeric(14,8)`) → 422 `cost_out_of_range`, antes de intentar guardar el evento.
 - `GET /v1/costs?group_by=feature|customer|model&from=YYYY-MM-DD&to=YYYY-MM-DD` → lista de `{key, total_cost_usd, total_input_tokens, total_output_tokens, calls}` ordenada por costo descendente. `group_by` inválido → 422.
+- `from` y `to` aceptan fechas entre 2000-01-01 y 2100-12-31, ambos límites incluidos; fuera del rango → 422 `validation_error`.
 - `GET /health` → `{"status":"ok"}` sin auth.
 
 ## 7. SDK (`sdk/tokenledger`)
