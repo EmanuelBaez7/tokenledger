@@ -51,10 +51,10 @@ Abre la URL → ve el rango por defecto (últimos 14 días) → cambia fechas �
 ## Estados vacíos y bloqueados
 | Estado | Qué ve el usuario |
 |---|---|
-| Sin datos | "Aún no hay eventos. Ejecuta `python scripts/seed_demo.py` o envía uno con el SDK." |
+| Sin datos | "Aún no hay eventos. Ejecuta `uv run python -m scripts.seed_demo` o envía uno con el SDK." |
 | API caída o sin red | "No se pudo conectar con la API." + botón Reintentar |
 | 401 | "La API rechazó las credenciales. Revisa `API_KEY`." |
 | Rango sin datos | Tablas vacías con aviso "Sin gasto en este rango" |
 
 ## Primer uso (onboarding)
-No hay cuentas. El onboarding es el README: 3 comandos (`cp .env.example .env`, `docker compose up`, `python scripts/seed_demo.py`) y un ejemplo de 5 líneas con el SDK.
+No hay cuentas. El onboarding es el README: 3 comandos (`cp .env.example .env`, `docker compose up`, `uv run python -m scripts.seed_demo`) y un ejemplo de 5 líneas con el SDK.

@@ -164,7 +164,7 @@ def main() -> None:
 
         if not global_events:
             st.info(
-                "Aún no hay eventos. Ejecuta `uv run python scripts/seed_demo.py` "
+                "Aún no hay eventos. Ejecuta `uv run python -m scripts.seed_demo` "
                 "o envía uno con el SDK."
             )
             st.stop()

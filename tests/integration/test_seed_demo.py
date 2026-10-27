@@ -165,3 +165,33 @@ def test_all_customers_present_in_db(seeded_session) -> None:
         assert cust in customers, f"Customer '{cust}' not found in DB"
     # Anonymous events are grouped as 'unassigned'
     assert "unassigned" in customers, "Expected 'unassigned' customer group"
+
+
+def test_summary_distinguishes_cost_and_call_leaders(
+    db_session, _seed_prices, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from scripts.seed_demo import RawEvent, _insert_events, _print_summary
+
+    now = datetime(2026, 10, 20, tzinfo=UTC)
+    events = [
+        RawEvent("openai", "gpt-4o-mini", "frequent", "many", 1, 1, "ok", 1, now),
+        RawEvent("openai", "gpt-4o-mini", "frequent", "many", 1, 1, "ok", 1, now),
+        RawEvent(
+            "anthropic",
+            "claude-3-5-sonnet-20241022",
+            "costly",
+            "spender",
+            10000,
+            10000,
+            "ok",
+            1,
+            now,
+        ),
+    ]
+    summary = _insert_events(db_session, events)
+    _print_summary(events, summary)
+    output = capsys.readouterr().out
+    assert "Top feature por costo : costly" in output
+    assert "Top customer por costo: spender" in output
+    assert "Top feature por llamadas : frequent" in output
+    assert "Top customer por llamadas: many" in output

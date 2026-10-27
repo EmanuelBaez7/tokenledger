@@ -5,7 +5,7 @@ PriceRepository, CostCalculator, and EventRepository — not the API — so that
 created_at can be set to historical dates.
 
 Usage:
-    uv run python scripts/seed_demo.py [--yes] [--allow-remote]
+    uv run python -m scripts.seed_demo [--yes] [--allow-remote]
 
 Flags:
     --yes            Skip confirmation prompt and insert immediately.
@@ -237,8 +237,18 @@ def _check_host_is_local(database_url: str, allow_remote: bool) -> None:
         sys.exit(1)
 
 
-def _insert_events(session: Session, raw_events: list[RawEvent]) -> tuple[int, Decimal]:
-    """Insert RawEvent list into the database; return (count, total_cost_usd)."""
+@dataclass
+class SeedSummary:
+    """Exact costs for this insertion, independent of existing database events."""
+
+    inserted: int
+    total_cost: Decimal
+    feature_costs: dict[str, Decimal]
+    customer_costs: dict[str, Decimal]
+
+
+def _insert_events(session: Session, raw_events: list[RawEvent]) -> SeedSummary:
+    """Insert events and collect exact costs for the final summary."""
     from app.db.models import Event
     from app.repositories.events import EventRepository
     from app.repositories.prices import PriceRepository
@@ -250,6 +260,8 @@ def _insert_events(session: Session, raw_events: list[RawEvent]) -> tuple[int, D
 
     total_cost = Decimal("0")
     inserted = 0
+    feature_costs: dict[str, Decimal] = {}
+    customer_costs: dict[str, Decimal] = {}
 
     for raw in raw_events:
         if raw.status == "error":
@@ -285,11 +297,16 @@ def _insert_events(session: Session, raw_events: list[RawEvent]) -> tuple[int, D
             status=raw.status,
         )
         event_repo.add(event)
+        feature_costs[raw.feature] = (
+            feature_costs.get(raw.feature, Decimal("0")) + cost_usd
+        )
+        customer = raw.customer or "unassigned"
+        customer_costs[customer] = customer_costs.get(customer, Decimal("0")) + cost_usd
         total_cost += cost_usd
         inserted += 1
 
     session.commit()
-    return inserted, total_cost
+    return SeedSummary(inserted, total_cost, feature_costs, customer_costs)
 
 
 # ---------------------------------------------------------------------------
@@ -299,11 +316,9 @@ def _insert_events(session: Session, raw_events: list[RawEvent]) -> tuple[int, D
 
 def _print_summary(
     raw_events: list[RawEvent],
-    inserted: int,
-    total_cost: Decimal,
+    summary: SeedSummary,
 ) -> None:
     """Print a human-readable summary after insertion."""
-    # Top feature by count (approximation; exact cost would need DB query)
     feature_counts: dict[str, int] = {}
     customer_counts: dict[str, int] = {}
     for ev in raw_events:
@@ -311,14 +326,19 @@ def _print_summary(
         key = ev.customer or "unassigned"
         customer_counts[key] = customer_counts.get(key, 0) + 1
 
+    top_feature_by_cost = max(summary.feature_costs, key=summary.feature_costs.get)
+    top_customer_by_cost = max(summary.customer_costs, key=summary.customer_costs.get)
+
     top_feature = max(feature_counts, key=lambda k: feature_counts[k])
     top_customer = max(customer_counts, key=lambda k: customer_counts[k])
 
     print("\n✅ Seed de demo completado")
-    print(f"   Eventos insertados : {inserted}")
-    print(f"   Gasto total        : ${total_cost:.8f}")
-    print(f"   Top feature        : {top_feature}")
-    print(f"   Top customer       : {top_customer}")
+    print(f"   Eventos insertados : {summary.inserted}")
+    print(f"   Gasto total        : ${summary.total_cost:.8f}")
+    print(f"   Top feature por costo : {top_feature_by_cost}")
+    print(f"   Top customer por costo: {top_customer_by_cost}")
+    print(f"   Top feature por llamadas : {top_feature}")
+    print(f"   Top customer por llamadas: {top_customer}")
 
 
 # ---------------------------------------------------------------------------
@@ -361,9 +381,9 @@ def main(argv: list[str] | None = None) -> None:
             sys.exit(0)
 
     with SessionLocal() as session:
-        inserted, total_cost = _insert_events(session, raw_events)
+        summary = _insert_events(session, raw_events)
 
-    _print_summary(raw_events, inserted, total_cost)
+    _print_summary(raw_events, summary)
 
 
 if __name__ == "__main__":

@@ -260,7 +260,7 @@ Cada hallazgo incluye evidencia, impacto y recomendación. **Ningún arreglo fue
 
 ### Media
 
-**M1 — El comando de demo documentado no funciona desde la raíz.** Evidencia: ejecutar en subproceso `uv run python scripts/seed_demo.py --yes` con API_KEY sintética y DATABASE_URL sintética remota (para rechazar antes de insertar) devuelve exit 1, `ModuleNotFoundError: No module named 'app'`, antes de alcanzar la protección de host. scripts/seed_demo.py:346–347 importa app; Python coloca scripts, no la raíz, como directorio inicial de imports. Los tests importan el módulo con pythonpath configurado por pytest y no detectan el fallo CLI. Impacto: onboarding y ayuda del dashboard fallan. Recomendación: documentar/invocar `uv run python -m scripts.seed_demo` consistentemente y validar la CLI sin DB; no añadir sys.path a mano. **Commit pequeño: sí.**
+**M1 — El comando de demo documentado no funciona desde la raíz.** Evidencia: ejecutar en subproceso el antiguo comando por archivo (`scripts/seed_demo.py`, con `--yes`) con API_KEY sintética y DATABASE_URL sintética remota (para rechazar antes de insertar) devuelve exit 1, `ModuleNotFoundError: No module named 'app'`, antes de alcanzar la protección de host. scripts/seed_demo.py:346–347 importa app; Python coloca scripts, no la raíz, como directorio inicial de imports. Los tests importan el módulo con pythonpath configurado por pytest y no detectan el fallo CLI. Impacto: onboarding y ayuda del dashboard fallan. Recomendación: documentar/invocar `uv run python -m scripts.seed_demo` consistentemente y validar la CLI sin DB; no añadir sys.path a mano. **Commit pequeño: sí.**
 
 **M2 — Los errores inesperados no siguen el formato JSON del SPEC.** Evidencia: api/errors.py:96–100 solo registra tres familias concretas. Sonda TestClient(raise_server_exceptions=False) con get_report_service sustituido en memoria por uno que lanza RuntimeError: `500`, `text/plain; charset=utf-8`, `Internal Server Error`. Impacto: consumidores no pueden tratar todos los errores con {code,message,details}; errores de BD siguen esta ruta. Recomendación: handler general con JSON seguro y logging saneado; conservar detalles internos fuera de la respuesta. **Commit pequeño: sí.**
 
@@ -355,3 +355,10 @@ Ejecutado después del 9.2, con dos commits separados y test-first, sin reescrib
 La extracción y validación de modelo/tokens, el cálculo de latencia final, la construcción del evento y su encolado están dentro de una frontera que captura errores de seguimiento. La excepción de fn se relanza con `raise`, conservando el objeto original; los errores del LLM con modelo explícito siguen intentando registrar un evento error con cero tokens.
 
 Verificación completa: **211 tests aprobados**, un warning conocido de Starlette/httpx; cobertura app+sdk **95.37%**, y SDK redondeada al **90%**, por encima del mínimo. No se añadieron dependencias ni se modificó código fuera de sdk/ y sus tests. PROGRESS conserva el contenido anterior. A1/A2 y M2/M3/M4 quedan resueltos; el resto de hallazgos continúa pendiente. No se hizo push, amend, reset, force ni se avanzó de paso.
+
+## Mini-paso 9.3 — Seed ejecutable y resumen exacto
+
+- M1 y B6 resueltos por `fix: make demo seed runnable as a module`.
+- Comando oficial desde la raíz: `uv run python -m scripts.seed_demo`.
+- Regresión: subproceso con configuración sintética rechaza el host remoto sin ModuleNotFoundError; resumen con líderes distintos por costo y por llamadas, usando solo los costos insertados en esta ejecución.
+- La reproducción inicial dio 2 fallos y 1 control aprobado. Validación previa al commit: pytest completo, Ruff y formato en verde. Los demás arreglos de 9.3 continúan pendientes.

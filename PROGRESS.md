@@ -116,7 +116,7 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
 - **Historia del dashboard:** `traduccion` es la feature más cara (muchos tokens de salida), `globex` es el cliente que más gasta (peso alto + spike en día 10 con 4× eventos extra con el modelo más caro). Tendencia ligeramente creciente de 0.8× a 1.2× por día. ~3% de eventos `status=error` con tokens 0 y costo 0.
 - **Tests unitarios (16):** cantidad ~300, timestamps UTC, sin futuro, dentro de 14 días, 4 features y 5 customers, eventos sin customer, tasa de error, reproducibilidad exacta con misma semilla, traduccion top feature, globex top customer, todos los modelos presentes.
 - **Test de integración (8):** inserta en `tokenledger_test`, verifica que suma por feature == suma por customer, `traduccion` primero por costo, `globex` primero por costo, eventos error con costo 0, tipos Decimal, todos los grupos presentes.
-- **Dashboard:** mensaje de estado vacío actualizado a `uv run python scripts/seed_demo.py`.
+- **Dashboard:** mensaje de estado vacío actualizado a `uv run python -m scripts.seed_demo`.
 - **Decisión:** El seed escribe directo en la base (no por la API) porque la API rechaza con 422 cualquier campo `created_at` enviado por el cliente, lo que haría imposible generar eventos históricos con fechas pasadas.
 
 ---
@@ -169,3 +169,10 @@ Completado después del mini-paso 9.2, según la autorización del dueño. Dos c
 - `docs/AUDITORIA-HANDOFF.md` identifica por mensaje exacto el commit del SDK que era local al auditar; las correcciones y el traspaso ya emplean sus mensajes, conservando la evidencia histórica.
 - `AGENTS.md` y `CLAUDE.md` prohíben datos del equipo y personales en documentos, informes y mensajes de commit, y requieren rutas relativas al repositorio. Sin cambios de código ni avance de paso.
 
+
+## Mini-paso 9.3 — Seed ejecutable y resumen exacto
+
+- M1 y B6 resueltos por `fix: make demo seed runnable as a module`.
+- Comando oficial desde la raíz: `uv run python -m scripts.seed_demo`.
+- Regresión: subproceso con configuración sintética rechaza el host remoto sin ModuleNotFoundError; resumen con líderes distintos por costo y por llamadas, usando solo los costos insertados en esta ejecución.
+- La reproducción inicial dio 2 fallos y 1 control aprobado. Validación previa al commit: pytest completo, Ruff y formato en verde. Los demás arreglos de 9.3 continúan pendientes.
