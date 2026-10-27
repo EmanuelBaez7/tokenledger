@@ -4,6 +4,8 @@ Fecha: **2026-10-27**. Revisión de `main` en `2cc3234`, antes del commit docume
 
 **Actualización del mini-paso 9.2:** M3, M2 y M4 están resueltos. La evidencia original se conserva como fotografía de la auditoría inicial; el cierre añadido al final registra las correcciones y su validación actual.
 
+**Actualización del mini-paso 9.1:** A1 y A2 también están resueltos; ver el cierre del SDK añadido después del 9.2, según el orden de autorización del dueño.
+
 ## Alcance y conclusión
 
 Se leyeron, en orden, `CLAUDE.md`, `SPEC.md`, `PROGRESS.md`, `PLAN.md` y los seis documentos de `docs/`. Auditoría de código, tests, migraciones, configuración, historia alcanzable y documentación. No se corrigieron hallazgos ni se modificaron código, tests o workflows. Únicos cambios previstos: `AGENTS.md`, este informe y una entrada añadida a `PROGRESS.md`.
@@ -340,3 +342,16 @@ Verificación completa: **161 tests aprobados**, un warning conocido de Starlett
 Prueba manual sobre el código actualizado con uvicorn en `127.0.0.1:8500`: `Invoke-RestMethod` usando la clave configurada cargada en memoria, sin imprimirla, y el payload del dueño con input_tokens=2147483648 devolvió **422**, `code=validation_error`, `message=Request validation failed`, `details=[{field: input_tokens, message: Input should be less than or equal to 2147483647}]`. No se guardó ese evento.
 
 Los demás hallazgos permanecen pendientes. No se hizo push, amend, reset, force ni se avanzó al Paso 12. La API local de comprobación queda corriendo en el puerto 8500.
+
+## Resolución del mini-paso 9.1 — 2026-10-27
+
+Ejecutado después del 9.2, con dos commits separados y test-first, sin reescribir historia. Los arreglos se identifican por sus mensajes exactos, sin hashes:
+
+| Hallazgo | Estado | Commit | Evidencia de regresión y corrección |
+|---|---|---|---|
+| A1 | **Resuelto** | `fix: stop sdk from logging tracebacks that may contain the api key` | tests/unit/test_sdk_security.py reprodujo 8 fallos. Comprueba RuntimeError con la clave del header, HTTPError, timeout, fallo del worker, respuestas 401/422/500 y cola llena. Los warnings no adjuntan traceback, registran tipo y mensaje redactado con ***, y no incluyen valores de metadatos. La clave permanece en el atributo privado y se incorpora al header al enviar; repr/str muestran api_key=***. Suite previa al commit: 169 passed; Ruff y formato limpios |
+| A2 | **Resuelto** | `fix: make sdk tolerate invalid usage data` | tests/unit/test_sdk_usage.py reprodujo 40 fallos, con 2 controles válidos aprobados. Ambos formatos rechazan None, negativos, str, float, bool y objetos arbitrarios en ambos campos; también usage inválido/ausente. Devuelven el mismo objeto, registran warning sin valores sensibles y no encolan. Cero entero sigue válido. Un fallo de encolado no reemplaza ni el resultado ni la excepción original de fn |
+
+La extracción y validación de modelo/tokens, el cálculo de latencia final, la construcción del evento y su encolado están dentro de una frontera que captura errores de seguimiento. La excepción de fn se relanza con `raise`, conservando el objeto original; los errores del LLM con modelo explícito siguen intentando registrar un evento error con cero tokens.
+
+Verificación completa: **211 tests aprobados**, un warning conocido de Starlette/httpx; cobertura app+sdk **95.37%**, y SDK redondeada al **90%**, por encima del mínimo. No se añadieron dependencias ni se modificó código fuera de sdk/ y sus tests. PROGRESS conserva el contenido anterior. A1/A2 y M2/M3/M4 quedan resueltos; el resto de hallazgos continúa pendiente. No se hizo push, amend, reset, force ni se avanzó de paso.

@@ -151,3 +151,16 @@ Completado con autorización del dueño, preservando el historial anterior. Tres
 - Comprobación manual con Invoke-RestMethod sobre la API actual en **8500**: input_tokens=2147483648 devuelve **422 validation_error** con detalle del campo, sin exponer la clave ni guardar el evento. La API local queda corriendo.
 - [Informe actualizado](docs/AUDITORIA-HANDOFF.md): M2, M3 y M4 resueltos; los demás hallazgos y los pasos 12–14 siguen pendientes. No se hizo push, amend, reset ni force.
 
+## Mini-paso 9.1 — Robustez y privacidad del SDK — 2026-10-27
+
+Completado después del mini-paso 9.2, según la autorización del dueño. Dos commits separados, test-first, identificados por mensaje exacto y sin hashes:
+
+| Hallazgo resuelto | Commit | Cambio |
+|---|---|---|
+| A1 | `fix: stop sdk from logging tracebacks that may contain the api key` | Warnings sin exc_info ni valores de metadatos; tipo de excepción y mensaje con la clave sustituida por ***. Clave en atributo privado, header construido al enviar y repr/str con api_key=*** |
+| A2 | `fix: make sdk tolerate invalid usage data` | Tokens int no bool y no negativos; uso inválido/ausente no se encola. Extracción, modelo, evento y encolado protegidos; respuesta original intacta y excepción de fn relanzada tal cual, incluso si falla el seguimiento |
+
+- A1 reprodujo 8 fallos y cerró con **169 tests aprobados**. A2 reprodujo 40 fallos y cerró con **211 tests aprobados**. Se comprobaron pytest, Ruff y formato antes de cada commit.
+- Cobertura app+sdk **95.37%**; SDK redondeada **90%**. Persiste un warning conocido de Starlette/httpx. No se agregaron dependencias ni se modificaron API, base de datos o dashboard.
+- [Auditoría actualizada](docs/AUDITORIA-HANDOFF.md): A1 y A2 resueltos, conservando evidencia histórica; los demás pendientes y los pasos 12–14 permanecen abiertos. No se hizo push, amend, reset ni force.
+

@@ -35,35 +35,35 @@ def _get_logger() -> logging.Logger:
 _QUEUE_MAX_SIZE = 1000
 
 
-def _extract_anthropic(response: Any) -> tuple[str | None, int, int]:
+def _extract_anthropic(response: Any) -> tuple[object, object, object]:
     """Extract model and tokens from an Anthropic-style response object."""
     try:
-        model: str | None = getattr(response, "model", None)
+        model = getattr(response, "model", None)
         usage = getattr(response, "usage", None)
         if usage is None:
             return model, -1, -1
-        input_tokens: int = getattr(usage, "input_tokens", -1)
-        output_tokens: int = getattr(usage, "output_tokens", -1)
+        input_tokens = getattr(usage, "input_tokens", -1)
+        output_tokens = getattr(usage, "output_tokens", -1)
         return model, input_tokens, output_tokens
     except Exception:  # noqa: BLE001
         return None, -1, -1
 
 
-def _extract_openai(response: Any) -> tuple[str | None, int, int]:
+def _extract_openai(response: Any) -> tuple[object, object, object]:
     """Extract model and tokens from an OpenAI-style response object."""
     try:
-        model: str | None = getattr(response, "model", None)
+        model = getattr(response, "model", None)
         usage = getattr(response, "usage", None)
         if usage is None:
             return model, -1, -1
-        input_tokens: int = getattr(usage, "prompt_tokens", -1)
-        output_tokens: int = getattr(usage, "completion_tokens", -1)
+        input_tokens = getattr(usage, "prompt_tokens", -1)
+        output_tokens = getattr(usage, "completion_tokens", -1)
         return model, input_tokens, output_tokens
     except Exception:  # noqa: BLE001
         return None, -1, -1
 
 
-_EXTRACTORS: dict[str, Callable[[Any], tuple[str | None, int, int]]] = {
+_EXTRACTORS: dict[str, Callable[[Any], tuple[object, object, object]]] = {
     "anthropic": _extract_anthropic,
     "openai": _extract_openai,
 }
@@ -124,76 +124,16 @@ class TokenLedger:
         (when model is known).
         """
         start = time.perf_counter()
-        exc_raised: BaseException | None = None
-        response: Any = None
-
         try:
             response = fn()
-        except BaseException as exc:  # noqa: BLE001
-            exc_raised = exc
-
-        latency_ms = int((time.perf_counter() - start) * 1000)
-
-        if exc_raised is not None:
-            # fn() raised — enqueue error event only if model is known
-            if model is not None:
-                self._enqueue(
-                    {
-                        "provider": provider,
-                        "model": model,
-                        "input_tokens": 0,
-                        "output_tokens": 0,
-                        "feature": feature,
-                        "customer": customer,
-                        "latency_ms": latency_ms,
-                        "status": "error",
-                    }
-                )
-            else:
-                _get_logger().warning(
-                    "tokenledger: LLM call failed and model is unknown; "
-                    "skipping error event"
-                )
-            raise exc_raised  # re-raise original, unwrapped
-
-        # fn() succeeded — extract usage from response
-        extractor = _EXTRACTORS.get(provider)
-        if extractor is None:
-            _get_logger().warning(
-                "tokenledger: unsupported provider '%s'; skipping event", provider
+        except BaseException:  # noqa: BLE001
+            self._record_event_safely(
+                None, provider, feature, customer, model, start, "error"
             )
-            return response
+            raise
 
-        resolved_model, input_tokens, output_tokens = extractor(response)
-
-        # If model was not passed, use the one from the response
-        effective_model = model or resolved_model
-
-        if effective_model is None:
-            _get_logger().warning(
-                "tokenledger: could not determine model from response; skipping event"
-            )
-            return response
-
-        if input_tokens < 0 or output_tokens < 0:
-            _get_logger().warning(
-                "tokenledger: token usage missing in response for model '%s'; "
-                "skipping event",
-                effective_model,
-            )
-            return response
-
-        self._enqueue(
-            {
-                "provider": provider,
-                "model": effective_model,
-                "input_tokens": input_tokens,
-                "output_tokens": output_tokens,
-                "feature": feature,
-                "customer": customer,
-                "latency_ms": latency_ms,
-                "status": "ok",
-            }
+        self._record_event_safely(
+            response, provider, feature, customer, model, start, "ok"
         )
         return response
 
@@ -221,6 +161,60 @@ class TokenLedger:
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    def _record_event_safely(
+        self,
+        response: Any,
+        provider: str,
+        feature: str,
+        customer: str | None,
+        model: str | None,
+        start: float,
+        status: str,
+    ) -> None:
+        """Isolate metadata extraction and event construction from the caller."""
+        try:
+            if status == "error":
+                effective_model = model
+                input_tokens, output_tokens = 0, 0
+            else:
+                extractor = _EXTRACTORS.get(provider)
+                if extractor is None:
+                    _get_logger().warning(
+                        "tokenledger: unsupported provider; skipping event"
+                    )
+                    return
+                resolved_model, input_tokens, output_tokens = extractor(response)
+                effective_model = model if model is not None else resolved_model
+
+            if not isinstance(effective_model, str) or not effective_model:
+                _get_logger().warning(
+                    "tokenledger: model missing or invalid; skipping event"
+                )
+                return
+            if any(
+                not isinstance(value, int) or isinstance(value, bool) or value < 0
+                for value in (input_tokens, output_tokens)
+            ):
+                _get_logger().warning(
+                    "tokenledger: token usage missing or invalid; skipping event"
+                )
+                return
+
+            self._enqueue(
+                {
+                    "provider": provider,
+                    "model": effective_model,
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens,
+                    "feature": feature,
+                    "customer": customer,
+                    "latency_ms": int((time.perf_counter() - start) * 1000),
+                    "status": status,
+                }
+            )
+        except Exception:  # noqa: BLE001
+            _get_logger().warning("tokenledger: tracking failed; skipping event")
 
     def _warn_exception(self, message: str, exc: Exception) -> None:
         """Log only the exception type and a redacted message, never a traceback."""
