@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "TokenLedger · arquitectura de ejecución",
+    "locale": "es",
+    "output": ".archify/tokenledger/tokenledger.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/EmanuelBaez7/tokenledger.git",
+      "revision": "9f22827a7c4bac1d66b410a8e1a563692b7420e9",
+      "link_mode": "web"
+    }
+  },
+  "components": [
+    {
+      "id": "sdk", "type": "backend", "label": "SDK Python", "sublabel": "track(fn) · uso y latencia", "tag": "Proceso del cliente",
+      "pos": [40, 260], "size": [180, 76],
+      "sources": [
+        {"path": "sdk/tokenledger/client.py", "line": 3, "end_line": 13},
+        {"path": "sdk/tokenledger/client.py", "line": 112, "end_line": 138},
+        {"path": "sdk/tokenledger/client.py", "line": 165, "end_line": 215}
+      ]
+    },
+    {
+      "id": "worker", "type": "backend", "label": "Envío en segundo plano", "sublabel": "Cola en memoria + daemon", "tag": "httpx · sin persistencia",
+      "pos": [350, 260], "size": [190, 76],
+      "sources": [
+        {"path": "sdk/tokenledger/client.py", "line": 93, "end_line": 101},
+        {"path": "sdk/tokenledger/client.py", "line": 231, "end_line": 257},
+        {"path": "sdk/tokenledger/client.py", "line": 259, "end_line": 282}
+      ]
+    },
+    {
+      "id": "api", "type": "backend", "label": "API FastAPI", "sublabel": "Rutas · auth · Pydantic", "tag": "X-API-Key requerida en /v1",
+      "pos": [690, 260], "size": [210, 76],
+      "sources": [
+        {"path": "app/api/v1/events.py", "line": 12, "end_line": 33},
+        {"path": "app/api/v1/costs.py", "line": 16, "end_line": 49},
+        {"path": "app/api/deps.py", "line": 16, "end_line": 53}
+      ]
+    },
+    {
+      "id": "services", "type": "backend", "label": "Servicios de aplicación", "sublabel": "EventService · ReportService", "tag": "Costo y commit en servidor",
+      "pos": [1060, 260], "size": [210, 76],
+      "sources": [
+        {"path": "app/services/events.py", "line": 34, "end_line": 79},
+        {"path": "app/services/reports.py", "line": 20, "end_line": 40}
+      ]
+    },
+    {
+      "id": "providers", "type": "external", "label": "OpenAI / Anthropic", "sublabel": "Llamada aportada por cliente", "tag": "Servicios de terceros",
+      "pos": [40, 40], "size": [180, 76],
+      "sources": [
+        {"path": "sdk/tokenledger/client.py", "line": 3, "end_line": 13},
+        {"path": "sdk/tokenledger/client.py", "line": 38, "end_line": 69},
+        {"path": "sdk/tokenledger/client.py", "line": 120, "end_line": 138}
+      ]
+    },
+    {
+      "id": "dashboard", "type": "frontend", "label": "Dashboard Streamlit", "sublabel": "Gasto por feature y customer", "tag": "Contenedor separado · :8501",
+      "pos": [350, 40], "size": [210, 76],
+      "sources": [
+        {"path": "dashboard/app.py", "line": 122, "end_line": 164},
+        {"path": "dashboard/data.py", "line": 80, "end_line": 135},
+        {"path": "docker-compose.yml", "line": 35, "end_line": 46}
+      ]
+    },
+    {
+      "id": "calculator", "type": "backend", "label": "CostCalculator", "sublabel": "Strategy por proveedor", "tag": "Decimal · 8 decimales",
+      "pos": [1060, 40], "size": [210, 76],
+      "sources": [
+        {"path": "app/services/cost_calculator.py", "line": 65, "end_line": 93},
+        {"path": "app/services/cost_calculator.py", "line": 101, "end_line": 164}
+      ]
+    },
+    {
+      "id": "repositories", "type": "backend", "label": "Repositorios", "sublabel": "EventRepository · PriceRepository", "tag": "SQLAlchemy · sesión por petición",
+      "pos": [1060, 520], "size": [210, 76],
+      "sources": [
+        {"path": "app/repositories/events.py", "line": 49, "end_line": 126},
+        {"path": "app/repositories/prices.py", "line": 9, "end_line": 34},
+        {"path": "app/db/session.py", "line": 10, "end_line": 26}
+      ]
+    },
+    {
+      "id": "postgres", "type": "database", "label": "PostgreSQL 16", "sublabel": "events + prices · volumen db_data", "tag": "Contenedor separado · :5432",
+      "pos": [350, 520], "size": [210, 76],
+      "sources": [
+        {"path": "docker-compose.yml", "line": 2, "end_line": 19},
+        {"path": "app/db/models.py", "line": 25, "end_line": 80},
+        {"path": "app/db/models.py", "line": 83, "end_line": 128}
+      ]
+    }
+  ],
+  "boundaries": [
+    {"kind": "region", "label": "Aplicación del cliente · SDK embebido", "wraps": ["sdk", "worker"], "pad": 22},
+    {"kind": "region", "label": "TokenLedger · proceso API / contenedor api", "wraps": ["api", "services", "calculator", "repositories"], "pad": 25}
+  ],
+  "connections": [
+    {"id": "sdk-provider", "from": "sdk", "to": "providers", "label": "Ejecuta fn() del cliente"},
+    {"id": "sdk-worker", "from": "sdk", "to": "worker", "label": "1 · encola uso", "variant": "emphasis"},
+    {"id": "worker-api", "from": "worker", "to": "api", "label": "2 · POST /v1/events", "variant": "emphasis"},
+    {"id": "api-service", "from": "api", "to": "services", "label": "3 · auth + validación", "variant": "emphasis"},
+    {"id": "service-repos", "from": "services", "to": "repositories", "label": "4 · precio + evento", "variant": "emphasis"},
+    {"id": "repos-postgres", "from": "repositories", "to": "postgres", "label": "5 · SQLAlchemy / psycopg", "variant": "emphasis"},
+    {"id": "service-calculate", "from": "services", "to": "calculator", "label": "Calcula USD"},
+    {"id": "dashboard-api", "from": "dashboard", "to": "api", "label": "GET /v1/costs + API key"}
+  ],
+  "cards": [
+    {"dot": "cyan", "title": "Flujo principal: ingesta", "items": ["track(fn) devuelve la respuesta original; solo el envío de telemetría ocurre en segundo plano.", "EventService consulta el precio vigente, calcula USD, valida el rango y confirma la transacción.", "201 devuelve el evento con cost_usd como string; sin precio vigente → 422. Fuentes: app/services/events.py:34–79; app/api/schemas.py:29–49."]},
+    {"dot": "rose", "title": "Límites de confianza y privacidad", "items": ["La API valida X-API-Key con compare_digest sobre bytes; /health es público. No hay login ni aislamiento multi-tenant.", "El cliente no aporta id, created_at ni cost_usd. La telemetría incluye metadatos de uso, sin prompts ni respuestas.", "Las llamadas LLM las aporta fn(); TokenLedger no configura credenciales de proveedor. Fuentes: app/api/deps.py:16–31; app/main.py:13–15; app/api/schemas.py:9–19; sdk/tokenledger/client.py:204–215."]},
+    {"dot": "emerald", "title": "Consulta y exactitud", "items": ["Streamlit → GET /v1/costs → ReportService → EventRepository; sin acceso directo del dashboard a PostgreSQL.", "Agregación por feature, customer o model, con fechas y costo descendente; customer vacío se agrupa como unassigned.", "Decimal en cálculo, persistencia, métricas y tablas; float solo para gráficos. Fuentes: app/services/reports.py:26–40; app/repositories/events.py:61–126; dashboard/data.py:138–237."]},
+    {"dot": "amber", "title": "Operación y alcance", "items": ["Vista lógica: servicios y repositorios son módulos del mismo proceso API. Compose configura api, db y dashboard; no se presupone infraestructura pública.", "Cola local de 1000 eventos; al llenarse descarta con warning. No hay broker, reintentos ni garantía de entrega durable.", "Precios cargados desde prices.seed.yaml mediante CLI; migraciones y seed de demo quedan fuera del flujo principal. Fuentes: docker-compose.yml:1–50; sdk/tokenledger/client.py:34–35,231–282; app/db/seed.py:25–93."]}
+  ]
+}

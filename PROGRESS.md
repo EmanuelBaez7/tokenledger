@@ -126,8 +126,8 @@ Estado de avance del proyecto según los pasos definidos en `PLAN.md` y `docs/06
 
 
 ## Pendientes y avisos
-- [x] Repo remoto creado en GitHub y proyecto subido; las correcciones locales de esta sesión quedan sin push por instrucción del dueño.
-- [ ] Comprobar que el workflow remoto queda en verde para la revisión publicada; la validación local no certifica CI remota.
+- [x] Repo remoto creado en GitHub y proyecto subido; las correcciones de los mini-pasos 9.1, 9.2 y 9.3 están publicadas en main.
+- [x] CI remota de `docs: align project docs with the current state` comprobada en verde el 2026-10-30: [ejecución de Actions](https://github.com/EmanuelBaez7/tokenledger/actions/runs/40888062060). Cada nueva publicación requiere comprobar su propia ejecución.
 - [ ] El SDK se importa como sdk.tokenledger; empaquetarlo como paquete instalable queda para la v0.2.
 - [x] **Formato de errores unificado (Resuelto en Mini-paso 6.1):** Formato único consistente `{"code", "message", "details"}` documentado e implementado para 401, 422 (modelo y validación Pydantic) y HTTP general.
 - En este equipo Windows reserva los puertos 7918-8217; para correr uvicorn en local usa `--port 8500`. Los tests no se ven afectados.
@@ -219,3 +219,42 @@ Completado después del mini-paso 9.2, según la autorización del dueño. Dos c
 - Sin dependencias añadidas ni cambios de esquema; no se avanzó al Paso 12 ni se hizo push, amend, reset o force.
 
 Validación final de 9.3: **243 tests aprobados**, cobertura app+sdk **95.38%** (umbral 80% superado), Ruff y formato limpios (**63 archivos**). Persiste un warning conocido de Starlette/httpx; no se cambian dependencias para silenciarlo.
+
+## Diagrama de arquitectura solicitado — 2026-10-28
+
+- Análisis del código actual y diagrama Archify con 9 componentes, flujo principal de ingesta, dependencias externas y límites del proceso cliente y del proceso API.
+- Artefacto: [.archify/architecture-tokenledger-20261028-105642/tokenledger.html](.archify/architecture-tokenledger-20261028-105642/tokenledger.html); fuente editable `candidate.json` en la misma carpeta, con referencias al código de la revisión analizada.
+- Decisión de representación: agrupar EventService y ReportService como servicios de aplicación, y ambos repositorios como acceso a datos; conservar cálculo, envío asíncrono, dashboard y PostgreSQL como componentes diferenciados. Los módulos internos no representan servicios desplegados independientes.
+- Detalles de privacidad, autenticación, precisión monetaria y operación en tarjetas. Vista de la implementación local; no presupone despliegue público.
+- Archify: validate, deliver, check y browser-check aprobados; sin revisión visual manual. Ruff: `All checks passed!`; formato: `63 files already formatted`.
+- `uv run pytest -q`: **169 aprobados, 74 errores de setup y 1 warning**; PostgreSQL agotó el tiempo de conexión en la fixture de integración. Pendiente restablecer esa conexión y repetir la suite; este resultado no sustituye la validación histórica anterior.
+- Sin cambios de código, dependencias, configuración ni esquema; sin commit ni push. Pasos 12–14 pendientes.
+
+## Fuente de arquitectura versionable — 2026-10-28
+
+- `.gitignore` excluye `.archify/`, incluidos HTML generados y recibos con datos locales.
+- Fuente editable conservada en `docs/architecture/tokenledger.architecture.json`, con rutas relativas, revisión fijada y salida en `.archify/tokenledger/tokenledger.html`.
+- `docs/architecture/README.md` documenta requisitos y regeneración con una instalación local de Archify, sin agregar dependencias a la aplicación.
+- Verificación: `git check-ignore` confirma la exclusión, JSON válido sin rutas absolutas locales y solo cambia la ruta de salida respecto del original; regeneración Archify con validate, deliver, check y browser-check aprobados. `git diff --check` limpio. No se repite pytest al no cambiar código de aplicación ni tests.
+- Se conserva el artefacto original local. Sin cambios funcionales, sin commit ni push; pasos 12–14 pendientes. Persiste el pendiente de conexión de PostgreSQL registrado en la tarea anterior.
+
+## Verificación visual local del dashboard — 2026-10-29
+
+- Reproducido `ModuleNotFoundError: No module named 'dashboard'` al arrancar mediante el ejecutable de Streamlit. Resuelto en ejecución, sin modificar imports ni rutas: desde la raíz usar `uv run --group dashboard python -m streamlit run dashboard/app.py --server.port 8501`. El modo módulo conserva la raíz para importar el paquete dashboard.
+- Configuración local de la sesión: API_BASE_URL apunta a `http://127.0.0.1:8500`; API_KEY cargada en memoria desde Settings, sin imprimirla ni guardar valores en archivos. Dashboard disponible en `http://localhost:8501`; API y dashboard quedan funcionando tras las pruebas.
+- Navegador real: filtro de 14 días, del 16 al 29 de octubre, con 371 llamadas y gasto total mostrado de $7.2777; traduccion lidera por costo ($6.5731) y globex entre clientes ($5.1347).
+- M8: API detenida de forma controlada; recarga y clic en Reintentar muestran error de conexión y conservan Reintentar, sin ayuda del seed ni estado vacío. Después se restauró la API con su base original.
+- Vacío global: API temporal conectada a la base de tests validada y vaciada por la fixture del test de reporte vacío; la pantalla muestra `uv run python -m scripts.seed_demo`. No se borraron ni insertaron eventos en la base de demo. La API temporal quedó detenida.
+- Rango vacío con eventos fuera del filtro: del 16 al 29 de octubre de 2020 muestra "Sin gasto en este rango", sin sugerir el seed; es el comportamiento definido en App Flow. Al terminar se restauró el filtro habitual.
+- M1: subproceso con DATABASE_URL y API_KEY sintéticas, sin PYTHONPATH; exit 1 por host remote.invalid no permitido, sin ModuleNotFoundError ni conexión a una base remota.
+- Validación: 30 tests enfocados aprobados; suite completa de 243 tests aprobados y cobertura app+sdk 95.38%, con un warning conocido de Starlette/httpx. PostgreSQL respondió en esta ejecución, resolviendo el bloqueo de validación registrado el día anterior.
+- Sin cambios de código, dependencias ni esquema; solo se añade este registro, conservando los cambios locales de arquitectura. Sin commit, staging ni push; pasos 12–14 pendientes. Sugerencia fuera de esta verificación: alinear el comando del Dockerfile del dashboard con la invocación por módulo y validar la imagen.
+
+## Preparación de la rama dashboard-v2 — 2026-10-30
+
+- Publicación autorizada expresamente por el dueño para esta tarea: guardar la evidencia y la documentación de arquitectura pendiente con `docs: record dashboard verification results`, publicar main y comprobar Actions antes de crear `feature/dashboard-v2`.
+- Al terminar la sesión anterior, el dueño pidió detener los servicios: API y dashboard se detuvieron y se verificaron libres los puertos 8500 y 8501. No se reiniciaron en esta tarea.
+- Cambios documentales revisados: evidencia de verificación, fuente de arquitectura con referencias relativas, instrucciones de regeneración y exclusión de artefactos locales de Archify. Sin código funcional, dependencias ni esquema modificados.
+- Verificación previa al commit: 169 tests unitarios aprobados, un warning conocido de Starlette/httpx; Ruff y formato limpios (63 archivos). JSON de arquitectura válido y sin rutas locales absolutas.
+- Docker estaba detenido y el control automático rechazó su inicio; no se repitió la integración local. La suite completa se valida en el CI del nuevo commit, tras publicarlo; la evidencia local completa del 2026-10-29 permanece registrada arriba.
+- La rama nueva se creará únicamente después de confirmar success en Actions para el commit exacto publicado. Esta tarea prepara la rama; no implementa dashboard-v2 ni avanza los pasos 12–14.
