@@ -1,0 +1,81 @@
+{
+  "source": "https://github.com/IBM/plex/tree/master/packages",
+  "verification": "WOFF2 directory + Brotli decompression; cmap, hmtx, OS/2, GSUB and absence of fvar checked without modifying official files.",
+  "interface_glyphs": "↑↓−$áéíóúüñ¿¡",
+  "sans_latin1_missing": "↑↓",
+  "sans_pi_covers": "↑↓",
+  "assets": [
+    {
+      "file": "IBMPlexMono-Medium-Latin1.woff2",
+      "sha256": "41201b658a328b9d00368215c2f1102770f80b15952ab82631e4006255e6365d",
+      "weight": 500,
+      "subset": "latin1",
+      "digit_advance": 600,
+      "tnum_feature": false
+    },
+    {
+      "file": "IBMPlexMono-Regular-Latin1.woff2",
+      "sha256": "e8993d946649b9d01abb1ed06d574b19d8ea3e66b5c3948602db335c44c18e56",
+      "weight": 400,
+      "subset": "latin1",
+      "digit_advance": 600,
+      "tnum_feature": false
+    },
+    {
+      "file": "IBMPlexMono-SemiBold-Latin1.woff2",
+      "sha256": "b7acd05041ab65f3b7039e218ddd893065e11a07e85ea85019473152a51b6b7d",
+      "weight": 600,
+      "subset": "latin1",
+      "digit_advance": 600,
+      "tnum_feature": false
+    },
+    {
+      "file": "IBMPlexSans-Medium-Latin1.woff2",
+      "sha256": "b5610af04d0d4b5a14a621d96d974b993e945a065db1a8861918f69ef9321934",
+      "weight": 500,
+      "subset": "latin1",
+      "digit_advance": 600,
+      "tnum_feature": false
+    },
+    {
+      "file": "IBMPlexSans-Medium-Pi.woff2",
+      "sha256": "bf05f10c977353cfb5a5c11e8973adf77c2b93a4798da3aa0dd8ba5088e12515",
+      "weight": 500,
+      "subset": "symbols",
+      "digit_advance": null,
+      "tnum_feature": false
+    },
+    {
+      "file": "IBMPlexSans-Regular-Latin1.woff2",
+      "sha256": "b5ad7bd39f996144915f0ad9849a90183b27d8c28ad97ed98af5b1bebc51f6b1",
+      "weight": 400,
+      "subset": "latin1",
+      "digit_advance": 600,
+      "tnum_feature": false
+    },
+    {
+      "file": "IBMPlexSans-Regular-Pi.woff2",
+      "sha256": "1487059829a180f975627e473acc81ff22c2c0faf1da09b314c27eeb41b7f2e4",
+      "weight": 400,
+      "subset": "symbols",
+      "digit_advance": null,
+      "tnum_feature": false
+    },
+    {
+      "file": "IBMPlexSans-SemiBold-Latin1.woff2",
+      "sha256": "fff0ab3a88b0b4aa0b693e4f0201359a15183b08e3fa5696d1918d8f0ade8ad5",
+      "weight": 600,
+      "subset": "latin1",
+      "digit_advance": 600,
+      "tnum_feature": false
+    },
+    {
+      "file": "IBMPlexSans-SemiBold-Pi.woff2",
+      "sha256": "768421433d850d3a30118dddf05972625d99ee49bc32c5a8fd26bbe020c4d0f9",
+      "weight": 600,
+      "subset": "symbols",
+      "digit_advance": null,
+      "tnum_feature": false
+    }
+  ]
+}

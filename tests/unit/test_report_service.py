@@ -67,3 +67,17 @@ def test_report_service_raises_when_from_after_to() -> None:
     assert exc_info.value.date_from == date(2024, 5, 20)
     assert exc_info.value.date_to == date(2024, 5, 10)
     mock_repo.aggregate.assert_not_called()
+
+
+def test_daily_report_service_preserves_repository_order() -> None:
+    repo = MagicMock()
+    rows = [
+        AggregatedCost("2026-04-01", Decimal("9"), 10, 5, 1),
+        AggregatedCost("2026-04-02", Decimal("1"), 10, 5, 1),
+    ]
+    repo.aggregate.return_value = rows
+    result = ReportService(repo).get_costs("day", date(2026, 4, 1), date(2026, 4, 2))
+    assert result is rows
+    repo.aggregate.assert_called_once_with(
+        group_by="day", date_from=date(2026, 4, 1), date_to=date(2026, 4, 2)
+    )

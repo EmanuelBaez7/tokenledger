@@ -3,7 +3,7 @@ from typing import Literal
 
 from app.repositories.events import AggregatedCost, EventRepository
 
-GroupByDimension = Literal["feature", "customer", "model"]
+GroupByDimension = Literal["feature", "customer", "model", "day"]
 
 
 class InvalidDateRangeError(ValueError):

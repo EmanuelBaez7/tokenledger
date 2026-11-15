@@ -1,14 +1,81 @@
 [theme]
-primaryColor = "#2563EB"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F8FAFC"
+base = "light"
+font = "IBM Plex Sans"
+headingFont = "IBM Plex Sans"
+codeFont = "IBM Plex Mono"
+baseFontSize = 16
+baseFontWeight = 400
+headingFontWeights = [600, 600, 500, 500, 500, 500]
+headingFontSizes = ["2rem", "1.5rem", "1.25rem", "1rem", "1rem", "1rem"]
+baseRadius = "0.5rem"
+buttonRadius = "0.25rem"
+showWidgetBorder = true
+
+[theme.light]
+primaryColor = "#1D4ED8"
+backgroundColor = "#F8FAFC"
+secondaryBackgroundColor = "#FFFFFF"
 textColor = "#0F172A"
-font = "sans serif"
+borderColor = "#64748B"
+blueColor = "#1D4ED8"
+orangeColor = "#B45309"
+grayColor = "#475569"
+
+[theme.dark]
+primaryColor = "#93B4FF"
+backgroundColor = "#0B1220"
+secondaryBackgroundColor = "#111C2E"
+textColor = "#E5EAF3"
+borderColor = "#7C8CA5"
+blueColor = "#93B4FF"
+orangeColor = "#B78730"
+grayColor = "#9BA9BD"
 
 [server]
 headless = true
 enableCORS = false
 enableXsrfProtection = true
+enableStaticServing = true
 
 [browser]
 gatherUsageStats = false
+
+[client]
+toolbarMode = "viewer"
+showErrorDetails = "none"
+
+[[theme.fontFaces]]
+family = "IBM Plex Sans"
+url = "app/static/fonts/IBMPlexSans-Regular-Latin1.woff2"
+weight = 400
+style = "normal"
+
+[[theme.fontFaces]]
+family = "IBM Plex Sans"
+url = "app/static/fonts/IBMPlexSans-Medium-Latin1.woff2"
+weight = 500
+style = "normal"
+
+[[theme.fontFaces]]
+family = "IBM Plex Sans"
+url = "app/static/fonts/IBMPlexSans-SemiBold-Latin1.woff2"
+weight = 600
+style = "normal"
+
+[[theme.fontFaces]]
+family = "IBM Plex Mono"
+url = "app/static/fonts/IBMPlexMono-Regular-Latin1.woff2"
+weight = 400
+style = "normal"
+
+[[theme.fontFaces]]
+family = "IBM Plex Mono"
+url = "app/static/fonts/IBMPlexMono-Medium-Latin1.woff2"
+weight = 500
+style = "normal"
+
+[[theme.fontFaces]]
+family = "IBM Plex Mono"
+url = "app/static/fonts/IBMPlexMono-SemiBold-Latin1.woff2"
+weight = 600
+style = "normal"

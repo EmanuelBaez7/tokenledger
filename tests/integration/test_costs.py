@@ -512,3 +512,38 @@ def test_get_costs_422_malformed_to_date(
     assert any(
         item.get("field") == "to" and "message" in item for item in data["details"]
     )
+
+
+def test_daily_costs_use_existing_contract(
+    client: TestClient, db_session: Session, api_key: str
+) -> None:
+    from tests.integration.test_daily_repository import add_daily_events
+
+    add_daily_events(db_session)
+    response = client.get(
+        "/v1/costs?group_by=day&from=2026-04-01&to=2026-04-02",
+        headers={"X-API-Key": api_key},
+    )
+    assert response.status_code == 200
+    assert response.json() == [
+        {
+            "key": "2026-04-01",
+            "total_cost_usd": "11.00000000",
+            "total_input_tokens": 20,
+            "total_output_tokens": 10,
+            "calls": 2,
+        },
+        {
+            "key": "2026-04-02",
+            "total_cost_usd": "1.00000000",
+            "total_input_tokens": 10,
+            "total_output_tokens": 5,
+            "calls": 1,
+        },
+    ]
+
+
+def test_daily_costs_still_require_auth(client: TestClient) -> None:
+    response = client.get("/v1/costs?group_by=day")
+    assert response.status_code == 401
+    assert response.json()["code"] == "unauthorized"

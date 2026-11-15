@@ -4,7 +4,7 @@ from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import ColumnElement, func, select
+from sqlalchemy import ColumnElement, Date, cast, func, select
 from sqlalchemy.orm import Session
 
 from app.db.models import Event
@@ -21,7 +21,7 @@ class InvalidGroupByError(RepositoryError, ValueError):
         self.group_by = group_by
         super().__init__(
             f"Invalid group_by field '{group_by}'. "
-            "Allowed fields are: 'feature', 'customer', 'model'."
+            "Allowed fields are: 'feature', 'customer', 'model', 'day'."
         )
 
 
@@ -43,6 +43,7 @@ _GROUP_BY_COLUMNS: Mapping[str, ColumnElement[Any]] = {
     "feature": Event.feature,
     "customer": func.coalesce(Event.customer, "unassigned"),
     "model": Event.model,
+    "day": cast(func.timezone("UTC", Event.created_at), Date),
 }
 
 
@@ -66,7 +67,7 @@ class EventRepository:
     ) -> list[AggregatedCost]:
         """Aggregate event costs, token usage, and calls by dimension.
 
-        - group_by: 'feature', 'customer', or 'model'.
+        - group_by: 'feature', 'customer', 'model', or 'day' (UTC).
         - date_from: inclusive from 00:00 UTC.
         - date_to: inclusive until the end of that day (created_at < date_to + 1 day).
         - customer NULL events are grouped under 'unassigned'.
@@ -106,7 +107,9 @@ class EventRepository:
             end_dt = datetime.combine(d_to + timedelta(days=1), time.min, tzinfo=UTC)
             stmt = stmt.where(Event.created_at < end_dt)
 
-        stmt = stmt.order_by(total_cost_expr.desc())
+        stmt = stmt.order_by(
+            group_column.asc() if group_by == "day" else total_cost_expr.desc()
+        )
 
         rows = self.session.execute(stmt).all()
 

@@ -59,7 +59,8 @@ Sin registro ni sesiones. Cada petición lleva `X-API-Key`; el servidor la compa
 ## Validación de datos
 - Tokens enteros ≥ 0; `feature` obligatorio; `provider` limitado a los permitidos.
 - Si el par `(provider, model)` no tiene precio vigente → error 422 `unknown_model_price`.
-- `group_by` ∈ {feature, customer, model}; `from` ≤ `to`; fechas en formato `YYYY-MM-DD`.
+- `group_by` ∈ {feature, customer, model, day}; `from` ≤ `to`; fechas en formato `YYYY-MM-DD`.
+- Con day, key es el día UTC de created_at en formato `YYYY-MM-DD`, con orden ascendente por fecha. Las otras dimensiones conservan costo descendente. Se usa conversión UTC explícita en SQL, sin depender de la configuración de sesión de PostgreSQL; formato de respuesta, autenticación y errores se conservan.
 - Agrupación y fechas: eventos con customer NULL se agrupan bajo la clave 'unassigned' (COALESCE); 'from' es inclusivo desde 00:00 UTC y 'to' cubre el día completo (created_at < to + 1 día).
 - La API rechaza con 422 cualquier `cost_usd`, `id` o `created_at` que envíe el cliente.
 

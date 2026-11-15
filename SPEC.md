@@ -9,14 +9,18 @@ Registrar el gasto de llamadas a LLMs y responder: **¿qué función (feature) y
 Un desarrollador de una startup pequeña que usa APIs de LLM y no sabe cuánto cuesta cada función ni cada cliente.
 
 ## 3. Fuera de alcance (v0.1) — NO implementar
-Alertas, presupuestos, multi-tenant, login de usuarios, ClickHouse, OpenTelemetry, soporte de más de 2 proveedores, caché, colas de mensajes, frontend en React.
+Alertas, presupuestos, multi-tenant, login de usuarios, ClickHouse, OpenTelemetry, soporte de más de 2 proveedores, caché de backend (la caché de datos del dashboard se limita a 60 segundos por sesión), colas de mensajes, frontend en React.
 
 ## 4. Requisitos funcionales
 - **RF1** Ingestar un evento de uso de LLM vía API.
 - **RF2** Calcular el costo en USD a partir de tokens y una tabla de precios en base de datos.
 - **RF3** Consultar costos agregados por `feature`, `customer` o `model`, con filtro de fechas.
 - **RF4** SDK Python que envuelve una llamada al LLM y envía el evento sin bloquear ni romper el código del usuario.
-- **RF5** Dashboard de una pantalla con gasto por feature y por customer.
+- **RF5** Dashboard de una pantalla en Streamlit para analizar gasto por feature, customer y modelo, con tendencia diaria, periodos de 7/14/30 días o rango personalizado, comparación con el periodo anterior, KPI y observaciones deterministas sin IA.
+  - Tema claro por defecto y oscuro, diseño accesible con tablas equivalentes a gráficos, estados de carga/vacío/error con Reintentar y modo demo identificado siempre con «Datos sintéticos de demostración».
+  - Fuente `DASHBOARD_DATA_SOURCE=api` por defecto o `demo` sin base ni red, mediante fixture sintética versionada; filtros inclusivos, costos Decimal y customer nulo como unassigned.
+  - CSV UTF-8 con BOM por tabla y libro Excel con resumen, detalles, tendencia y metadatos, fórmulas vivas y neutralización de texto que pueda interpretarse como fórmula. Sin secretos en UI, logs ni exports.
+  - Paso 10.1: diseño en `docs/04-UI-UX-BRIEF.md`, aprobado con los ajustes del dueño antes de implementar; presupuesto y filtros cruzados quedan fuera. La agrupación diaria se añadirá a la sección 6 en su commit específico. Caché de 60 segundos por sesión sin incluir la API key en la clave ni logs; fuente demo obligatoria si faltan credenciales/configuración o está fijada por entorno.
 - **RF6** Endpoint `/health`.
 
 ## 5. Modelo de datos
@@ -52,7 +56,7 @@ La comparación usa bytes UTF-8 en ambos lados con `hmac.compare_digest`. `API_K
 
 - `POST /v1/events` → 201 con el evento y su `cost_usd`. Modelo sin precio → 422 con mensaje claro. Tokens negativos → 422.
 - Tokens de entrada/salida superiores a 2147483647 → 422 `validation_error`. Costo calculado fuera de 0 a 999999.99999999 USD (`numeric(14,8)`) → 422 `cost_out_of_range`, antes de intentar guardar el evento.
-- `GET /v1/costs?group_by=feature|customer|model&from=YYYY-MM-DD&to=YYYY-MM-DD` → lista de `{key, total_cost_usd, total_input_tokens, total_output_tokens, calls}` ordenada por costo descendente. `group_by` inválido → 422.
+- `GET /v1/costs?group_by=feature|customer|model|day&from=YYYY-MM-DD&to=YYYY-MM-DD` → lista de `{key, total_cost_usd, total_input_tokens, total_output_tokens, calls}`. Feature/customer/model se ordenan por costo descendente; day usa clave `YYYY-MM-DD` del día UTC de created_at y se ordena por fecha ascendente, independientemente de la configuración de sesión de la base. `group_by` inválido → 422.
 - `from` y `to` aceptan fechas entre 2000-01-01 y 2100-12-31, ambos límites incluidos; fuera del rango → 422 `validation_error`.
 - `GET /health` → `{"status":"ok"}` sin auth.
 

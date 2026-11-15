@@ -258,3 +258,94 @@ Validación final de 9.3: **243 tests aprobados**, cobertura app+sdk **95.38%** 
 - Verificación previa al commit: 169 tests unitarios aprobados, un warning conocido de Starlette/httpx; Ruff y formato limpios (63 archivos). JSON de arquitectura válido y sin rutas locales absolutas.
 - Docker estaba detenido y el control automático rechazó su inicio; no se repitió la integración local. La suite completa se valida en el CI del nuevo commit, tras publicarlo; la evidencia local completa del 2026-10-29 permanece registrada arriba.
 - La rama nueva se creará únicamente después de confirmar success en Actions para el commit exacto publicado. Esta tarea prepara la rama; no implementa dashboard-v2 ni avanza los pasos 12–14.
+
+## Paso 10.1 — Brief de dashboard v2 — 2026-10-30
+
+- Primer entregable: `docs: dashboard v2 design brief`, exclusivamente en feature/dashboard-v2. Brief reescrito y RF5 ampliado como alcance pendiente de implementación y aprobación.
+- Decisiones: IBM Plex Sans/Mono locales; tokens claro/oscuro con azul de marca; tablas semánticas accesibles, comparación de periodos iguales, picos sobre los siete días previos, modo demo explícito y exports protegidos. Presupuestos y filtros cruzados excluidos.
+- APIs locales revisadas: Streamlit 1.65.0 y Altair 6.3.0, contrastadas con documentación oficial. Pares de texto propuestos superan 4.5:1; la revisión de la interfaz renderizada queda para su implementación.
+- Skills relacionadas revisadas: find-skills, visualize y spreadsheets. No hay una especializada en UI/UX; se propone frontend-design de Anthropic tras leerla, sin instalarla. No se añadieron dependencias, fuentes, fixture ni código.
+- Validación previa al commit: 243 tests aprobados, cobertura app+sdk 95.38%, Ruff y formato limpios (63 archivos), con el warning conocido de Starlette/httpx. Se usó el PostgreSQL ya disponible; no se inició Docker. Staging revisado sin secretos ni artefactos locales.
+- Detenerse tras el commit documental y esperar aprobación expresa del brief; los otros cinco commits siguen pendientes. Sin push, amend, reset ni force.
+
+## Paso 10.1 — Refinamiento aprobado
+
+- `docs: refine dashboard v2 design brief`: ajustes del dueño incorporados antes de implementar los commits 2 a 5. Detención tras la interfaz; commit 6 pendiente de revisión.
+- Bordes de control 4.76:1 claro / 5.00:1 oscuro y foco 6.41:1 / 8.31:1; Sans para cifras y Mono solo identificadores. WOFF2 estáticos oficiales: dígitos tabulares nativos de 600 unidades, sin etiqueta tnum, alternativa aprobada. Flechas disponibles en Sans Pi; Latin1 cubre el resto de glifos solicitados.
+- Totales del periodo concilian con KPI incluso con búsqueda/límite visual de 100; CSV conserva todas las coincidencias. Media previa cero no es pico; una serie diaria alimenta comparación/tendencia/picos, caché por sesión de 60 segundos sin clave API en hash/logs.
+- No se instalará frontend-design. Una sola dependencia de aplicación nueva prevista: openpyxl en dashboard, en el commit de exports. Sin Docker ni push.
+
+### Paso 10.1 — Agrupación diaria
+
+- `feat: add daily grouping to the costs endpoint`: day agrupa por fecha UTC explícita y ordena fechas ascendentes, manteniendo formato, autenticación, filtros inclusivos y errores. SPEC sección 6 y schema actualizados.
+- Test-first: tres fallos reproducidos y dos controles aprobados en repositorio, servicio y API; cubre cambios de día con offsets y configuración de sesión de base distinta. Sin migración ni nueva dependencia; suite y Ruff en verde antes del commit.
+
+### Paso 10.1 — Datos, comparación y demo
+
+- `feat: dashboard data layer with period comparison and demo source`: funciones separadas para periodos inclusivos, comparación, picos con media positiva, observaciones y snapshot conciliado. Una consulta day cubre ambas ventanas y siete días previos; las dimensiones se consultan por separado.
+- Fixture de 400 eventos sintéticos generada una vez a partir del generador y CostCalculator, sin base; cinco ventanas permiten comparar periodos de 7/14/30 días. Costos exactos como strings, reloj inyectable y agregación local equivalente al contrato.
+- Selector: solo demo si falta configuración y bloqueo en demo si lo fija el entorno. Sin imports de app/ en ejecución del dashboard; errores HTTP o totales inconsistentes nunca se convierten en vacío. Caché de sesión se conectará con la interfaz, tras instalar el grupo dashboard en CI con el commit de exports.
+- Tests primero: periodos/base cero/umbral estricto, fixture reproducible, fuentes, segunda consulta fallida, conciliación y ejecución demo sin credenciales ni imports de aplicación. Sin dependencia nueva, Docker ni push.
+
+### Paso 10.1 — CSV y Excel
+
+- `feat: dashboard csv and excel exports`: funciones puras devuelven CSV con BOM y XLSX con seis hojas, metadatos sin secretos, formatos, A2 congelado, totales SUM y costo medio ponderado mediante división. Nota de Habilitar edición en Resumen; fórmulas verificadas como texto al reabrir el libro.
+- Neutralización de etiquetas con prefijos de fórmula, incluso tras espacios/saltos; caracteres no válidos para XML filtrados antes de escribir. CSV exporta todas las coincidencias con orden activo, sin límite visual de 100; libro exporta todo el periodo.
+- Única dependencia directa añadida: openpyxl en dashboard, necesaria para generar/reabrir fórmulas y formatos; uv.lock actualizado. CI instala el grupo dashboard para ejecutar estos tests.
+- Trece pruebas específicas cubren inyección, BOM, 150 filas, hojas/formulas/formatos/nota, fechas y libros vacíos sin referencias circulares. Suite, Ruff y formato en verde antes del commit. Sin Docker ni push.
+
+
+### Paso 10.1 — Interfaz del dashboard
+
+- Implementación de tema, fuentes, KPI, gráficos, tablas y estados en `feat: modern dashboard interface`. Commits de refinamiento, API diaria, datos y exports ya realizados en el orden aprobado. No se ejecutó el commit documental 6.
+- Fuentes oficiales sin modificar: nueve WOFF2 locales con licencia OFL y manifiesto SHA-256. Latin1 conserva cifras tabulares nativas de 600 unidades en 400/500/600 y los glifos españoles, dólar y menos; Sans Pi aporta las flechas. HTTP devuelve los nueve archivos exactos; el navegador observa las fuentes locales. Telemetría desactivada.
+- Crítica visual: eliminados pie de versión/GitHub, control de fechas deshabilitado, exportaciones duplicadas por tabla, reglas verticales y barra redundante del 100% en totales. Se mantiene la doble regla del cierre contable. Etiquetas largas envueltas y cifras con Sans tabular; identificadores con Mono.
+- Validación: 296 tests aprobados y cobertura app+sdk 95.38%; Ruff y formato limpios (79 archivos). Se conserva el warning conocido de Starlette/httpx. Pruebas con AppTest y MockTransport cubren fallos en las cinco consultas, JSON inválido y recuperación con Reintentar sin consultas duplicadas; caché por sesión, credenciales fuera del hash y cambio de credencial invalida datos.
+- Navegador: capturas claro/oscuro a 1440, 1024 y 390 px en `.archify/dashboard-v2-review/`, sin desbordamiento de página; tablas con desplazamiento interno y totales exactos. CSV descargado con BOM y una coincidencia buscada; Excel descargado con cuatro features completas, seis hojas, fórmulas y nota de edición. La interfaz se revisó antes del pulido posterior.
+- Streamlit 1.65 sincroniza los paneles y gráficos al ejecutar Python de nuevo. El menú nativo conserva el cambio de tema y la barra lateral indica pulsar Aplicar para sincronizarlo.
+- Sin Docker, push, amend, reset ni force. No se modifica la base para esta revisión; capturas y logs locales están ignorados por Git.
+
+### Paso 10.1 — Pulido de la interfaz revisada
+
+- `refactor: polish dashboard chart, kpis and demo data` reúne los cambios solicitados y actualiza el brief. Hasta tres picos por exceso, con umbral del 5% del gasto del periodo y desempate por fecha.
+- Tendencia con fechas cortas, etiquetas de serie directas y cuadrícula horizontal tenue. Gasto total incorpora su comparación y el quinto KPI muestra al cliente líder. La nota de Excel está dentro de Exportar.
+- Demo determinista con 62, 70, 79, 89 y 100 llamadas en ventanas consecutivas de 14 días. Conserva el pico y los líderes traduccion y globex.
+- Navegador confirmó los modos con y sin comparación, el pico en la tabla y el contraste mínimo de 17.06:1 claro y 14.15:1 oscuro en ayudas y etiquetas revisadas. La etiqueta y el valor del selector Demo mantienen el contraste al quedar bloqueados.
+- Validación con PostgreSQL temporal local. 301 tests aprobados, cobertura app+sdk 95.38%, Ruff limpio y 80 archivos con formato correcto. El commit documental 6 queda pendiente.
+
+### Paso 10.1 — Alineación, tema y pico de la demo
+
+- «Cliente más caro» y etiquetas con altura fija de 48 px. Se verificó la misma posición relativa de los cinco valores a 1440, 1024 y 390 px.
+- El aviso del tema usa los mismos 14 px que las demás ayudas. El menú nativo de Streamlit 1.65 cambia sus colores en el navegador. Los gráficos y paneles se sincronizan al pulsar Aplicar.
+- La demo conserva el pico solo en la ventana más reciente y distribuye el gasto de las cuatro ventanas históricas. El día más caro de la comparación pasó a 0.08016580 USD frente a 1.03007700 USD en la ventana actual. Se conservan el crecimiento y los líderes.
+- La medición previa de 17.06:1 correspondía al texto principal. Se midieron las etiquetas de KPI en 7.58:1 claro y 7.16:1 oscuro, las ayudas en 7.48–7.66:1 y 8.23–8.78:1, y el ámbar sobre el gráfico en 4.80:1 y 5.81:1, respectivamente.
+- Validación local con PostgreSQL temporal fuera de Docker. 301 tests aprobados, cobertura app+sdk de 95.38%, Ruff y formato en verde.
+- Los ajustes quedan locales para revisión. Compose, Dockerfile, la plantilla de entorno y el registro de arranque conservan sus cambios preexistentes.
+
+### Paso 10.1 — Cierre del dashboard v2
+
+- Interfaz aprobada. `fix: make dashboard theme-consistent and fix section overlap` sincroniza el tema claro y oscuro en tarjetas, tablas y gráficos desde el menú nativo. Aplicar queda para los filtros. Las distribuciones crecen con sus filas y etiquetas; se verificó la separación con Detalle a 1440, 1024 y 390 px.
+- Exportar ofrece CSV con todas las coincidencias y el orden activo, y un libro Excel del periodo completo con fórmulas y la nota de Habilitar edición.
+- La demo usa 400 eventos sintéticos deterministas sin API ni base. Fijar la fuente en demo bloquea el selector. Para 14 días, las cuatro tablas concilian con el KPI en $1.89550540; la comparación conserva variación diaria y el periodo actual tiene un solo pico.
+- Validación de cierre: 302 pruebas aprobadas, cobertura de `app` y `sdk` de 95.38%, Ruff y formato en verde.
+
+Arranque local en modo demo desde la raíz del repositorio, en PowerShell:
+
+```powershell
+$env:DASHBOARD_DATA_SOURCE = "demo"
+uv run --group dashboard python -m streamlit run dashboard/app.py --server.port 8501
+```
+
+Si el 8501 no está disponible, usa `--server.port 8765`.
+
+## Arranque local de Docker Compose en Windows — 2026-11-08
+
+- Windows rechazó la apertura de los puertos 5432 y 8000 con Winsock 10013. Compose admite `DB_HOST_PORT` para publicar PostgreSQL en loopback. En este equipo se usa 15432 para PostgreSQL, 8500 para la API y 8501 para el dashboard. Los servicios se comunican por los puertos internos de Compose.
+- El contenedor del dashboard inicia Streamlit como módulo para resolver los imports desde la raíz. `.env.example` documenta los puertos y el uso de `API_BASE_URL` al ejecutar Streamlit en el host. La configuración local se mantiene en el archivo ignorado por Git y excluido de las imágenes.
+- `docker compose up -d --build` completó el arranque de los tres servicios y reutilizó el volumen de PostgreSQL. `/health`, la consulta autenticada a `/v1/costs` y el endpoint de salud de Streamlit devolvieron HTTP 200. El navegador mostró métricas y gráficos con fuente API.
+- Validación final con `TEST_DATABASE_URL` apuntando a la base aislada `tokenledger_test` en 15432: 301 tests aprobados, cobertura app+sdk de 95.38% y el aviso conocido de Starlette/httpx. Ruff y formato limpios. Servicios activos para uso local.
+
+## Pausa del entorno local — 2026-11-12
+
+- Se cerró la instancia local de Streamlit. Docker Desktop ya estaba detenido.
+- Se verificó que los puertos de desarrollo 8500, 8501 y 15432 y los puertos alternativos 8000 y 5432 quedaron libres.

@@ -44,5 +44,6 @@ indent-style = "space"
 
 [dependency-groups]
 dashboard = [
+    "openpyxl>=3.1.5",
     "streamlit>=1.38.0",
 ]

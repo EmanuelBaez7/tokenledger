@@ -20,7 +20,7 @@ MAX_REPORT_DATE = date(2100, 12, 31)
 def get_costs(
     service: Annotated[ReportService, Depends(get_report_service)],
     _: Annotated[str, Depends(verify_api_key)],
-    group_by: Annotated[Literal["feature", "customer", "model"], Query()],
+    group_by: Annotated[Literal["feature", "customer", "model", "day"], Query()],
     date_from: Annotated[
         date | None, Query(alias="from", ge=MIN_REPORT_DATE, le=MAX_REPORT_DATE)
     ] = None,

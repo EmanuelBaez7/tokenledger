@@ -103,12 +103,15 @@ class RawEvent:
     created_at: datetime  # UTC, historical
 
 
-def generate_demo_events(rng: random.Random, now: datetime) -> list[RawEvent]:
+def generate_demo_events(
+    rng: random.Random, now: datetime, *, include_spike: bool = True
+) -> list[RawEvent]:
     """Generate synthetic demo events without touching the database.
 
     Args:
         rng: Seeded Random instance for reproducibility.
         now: Reference UTC datetime; no event will be in the future.
+        include_spike: Include extra high-cost calls on the demo spike day.
 
     Returns:
         List of RawEvent dataclasses ready to be persisted.
@@ -185,7 +188,7 @@ def generate_demo_events(rng: random.Random, now: datetime) -> list[RawEvent]:
             )
 
         # Add globex spike events on spike day
-        if day_idx == GLOBEX_SPIKE_DAY:
+        if include_spike and day_idx == GLOBEX_SPIKE_DAY:
             spike_model = MODELS_CONFIG[0]  # sonnet (most expensive)
             for _ in range(int(base_per_day * GLOBEX_SPIKE_MULTIPLIER)):
                 tok_range = TOKEN_RANGES["traduccion"]
